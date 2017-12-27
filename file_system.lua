@@ -44,7 +44,8 @@ function refine_returns(t)
 		end
 	end
 	local val = minetest.serialize(t_)
-	refined = val:gsub("return ", ""):gsub("{", ""):gsub("}", ""):gsub("\"", "")
+	refined = val:gsub("return ", ""):gsub("{", ""):gsub("}", ""):gsub("\"", ""):
+	gsub(" ", "")
 	return refined
 end
 
@@ -62,7 +63,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				"image_button[8.6,2;.5,.3;;minimize_fs;--;true;false;]" ..
 				"box[2.65,2.3;6.88,.5;black]" ..
 				"textarea[3.2,2.4;4,.5;path;;" .. minetest.formspec_escape(">Desktop") .. "]" ..
-				"textarea[7.3,2.4;2.5,.5;search_fs;;Search Desktop]" ..
+				"textarea[7.3,2.4;2.5,.5;search_fs;;" .. minetest.formspec_escape("Search Desktop") .. "]" ..
 				"image_button[2.75,3;1,.3;;desktop_f;" .. minetest.colorize("#000000", "Desktop") .. ";true;false;]" ..
 				"image_button[2.8,3.3;1,.3;;documents_f;" .. minetest.colorize("#000000", "Documents") .. ";true;false;]" ..
 				"image_button[2.8,3.6;1,.3;;downloads_f;" .. minetest.colorize("#000000", "Downloads") .. ";true;false;]" ..
@@ -72,6 +73,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				"tableoptions[background=#7AC5CD]" ..
 				"table[4,2.9;5.2,3;contents;" .. refine_returns(files.Desktop) .. ";]")
 				status = "maximized"
+				desktop_v = true
 			end
 		end
 		if fields.close_fs then
@@ -83,23 +85,30 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		if fields.documents_f then
 			file_system(player, files.Documents)
+			view = "documents"
 		end
 		if fields.desktop_f then
 			file_system(player, files.Desktop)
+			view = "desktop"
 		end
 	end
 	local event = minetest.explode_table_event(fields.contents)
 	if event.type == "CHG" then
-		minetest.chat_send_all(tonumber(event.index))
-		minetest.after(2,function()
-			desktop(player, "default_notepad",
-			"image_button[2.4,1.53;.75,.3;;save_notes;Save;true;false;]" ..
-			"image_button[3,1.53;.75,.3;;open_notes;Open;true;false;]" ..
-			"image_button[7.4,1.53;.5,.3;;minimize_np;--;true;false;]" ..
-			"image_button[7.7,1.5;.5,.4;maximize_w.png;maximize_np;;true;false;]" ..
-			"image_button[8,1.53;.5,.3;;close_notepad;X;true;false;]" ..
-			"textarea[2.7,2;6,5.3;notes;;" .. "cows" .. "]" ..
-			"image_button[1.5,8.25;.75,.75;notepad.png;notepad_task;;true;false;]")
-		end)
+		local application = {}
+		local file = {}
+		if view == "desktop" then
+			application = string.lower(files.Desktop[event.row])
+			_G[application](player)
+		end
+		if view == "documents" then
+			for k,v in pairs(files.Documents) do
+				table.insert(file, v)
+			end
+			local text = minetest.serialize(file[event.row]):gsub("return ", ""):
+			gsub("{", ""):gsub("}", ""):gsub("\"", "")
+			if file[event.row] ~= nil then
+				notepad_open(player, text)
+			end
+		end
 	end
 end)

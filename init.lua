@@ -6,8 +6,13 @@ files = {
 	Pictures = {},
 }
 
+programs = {"Notepad","File_System"}
+
+view = {}
+
 dofile(minetest.get_modpath("mineos") .. "/file_system.lua")
 dofile(minetest.get_modpath("mineos") .. "/notepad.lua")
+dofile(minetest.get_modpath("mineos") .. "/mine_menu.lua")
 
 local f = io.open(minetest.get_worldpath() .. "/mineos_files.db", "r")
 if f == nil then
