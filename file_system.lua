@@ -27,9 +27,7 @@ function file_system(player, t)
 	"table[4,2.9;5.2,3;contents;" .. refine_returns(t) .. ";]")
 end
 
-local a = 0
 local status = {}
-local text = {}
 
 function refine_returns(t)
 	local refined = {}
