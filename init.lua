@@ -6,7 +6,7 @@ files = {
 	Pictures = {},
 }
 
-programs = {"Notepad","File_System"}
+programs = {"Calculator","File_System","Notepad"}
 
 view = {}
 
