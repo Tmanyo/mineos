@@ -1,7 +1,7 @@
 files = {
 	Documents = {},
 	Downloads = {},
-	Desktop = {"Notepad"},
+	Desktop = {"Notepad", "Calculator"},
 	Music = {},
 	Pictures = {},
 }
@@ -13,6 +13,7 @@ view = {}
 dofile(minetest.get_modpath("mineos") .. "/file_system.lua")
 dofile(minetest.get_modpath("mineos") .. "/notepad.lua")
 dofile(minetest.get_modpath("mineos") .. "/mine_menu.lua")
+dofile(minetest.get_modpath("mineos") .. "/calculator.lua")
 
 local f = io.open(minetest.get_worldpath() .. "/mineos_files.db", "r")
 if f == nil then
