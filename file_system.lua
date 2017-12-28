@@ -71,7 +71,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				"tableoptions[background=#7AC5CD]" ..
 				"table[4,2.9;5.2,3;contents;" .. refine_returns(files.Desktop) .. ";]")
 				status = "maximized"
-				desktop_v = true
+				view = "desktop"
 			end
 		end
 		if fields.close_fs then
