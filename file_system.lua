@@ -54,22 +54,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				desktop(player, "default", "")
 				status = "minimized"
 			else
-				desktop(player, "default_fs",
-				"label[5.65,1.85;File System]" ..
-				"image_button[9.25,2;.5,.3;;close_fs;X;true;false;]" ..
-				"image_button[8.9,1.95;.5,.4;maximize_w.png;maximize_fs;;true;false;]" ..
-				"image_button[8.6,2;.5,.3;;minimize_fs;--;true;false;]" ..
-				"box[2.65,2.3;6.88,.5;black]" ..
-				"textarea[3.2,2.4;4,.5;path;;" .. minetest.formspec_escape(">Desktop") .. "]" ..
-				"textarea[7.3,2.4;2.5,.5;search_fs;;" .. minetest.formspec_escape("Search Desktop") .. "]" ..
-				"image_button[2.75,3;1,.3;;desktop_f;" .. minetest.colorize("#000000", "Desktop") .. ";true;false;]" ..
-				"image_button[2.8,3.3;1,.3;;documents_f;" .. minetest.colorize("#000000", "Documents") .. ";true;false;]" ..
-				"image_button[2.8,3.6;1,.3;;downloads_f;" .. minetest.colorize("#000000", "Downloads") .. ";true;false;]" ..
-				"image_button[2.8,3.9;1,.3;;music_f;" .. minetest.colorize("#000000", "Music") .. ";true;false;]" ..
-				"image_button[2.8,4.2;1,.3;;pictures_f;" .. minetest.colorize("#000000", "Pictures") .. ";true;false;]" ..
-				"box[3.8,2.79;.1,3.35;black]" ..
-				"tableoptions[background=#7AC5CD]" ..
-				"table[4,2.9;5.2,3;contents;" .. refine_returns(files.Desktop) .. ";]")
+				file_system(player, files.Desktop)
 				status = "maximized"
 				view = "desktop"
 			end
