@@ -1,7 +1,7 @@
 --[[
 	Mineos Email Version 1
-	Creators:
-		Code and Textures: Tmanyo
+	Contributors:
+		Code & Textures: Tmanyo
 --]]
 
 local mail_type = {}
