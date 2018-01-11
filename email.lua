@@ -1,3 +1,9 @@
+--[[
+	Mineos Email Version 1
+	Creators:
+		Code and Textures: Tmanyo
+--]]
+
 local mail_type = {}
 local selected = {}
 local item = {}
