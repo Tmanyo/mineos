@@ -31,35 +31,45 @@ function calculator(player)
 	"button[5.3,5.9;1,1;per;.]" ..
 	"button[6.3,5.9;1,1;ans;=]" ..
 	"button[4.3,5.9;1,1;clear;C]" ..
-	"image_button[1.5,8.25;.75,.75;calculator.png;calculator_task;;true;" ..
-	"false;]")
+	current_tasks)
 end
 
-local status = {}
+calculator_status = {}
+calculator_task = {}
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.calculator then
+			active_task = "calculator"
+			calculator_status = "minimized"
+			remember_notes(fields)
+			if not current_tasks:match("calculator") then
+				register_task("calculator")
+				handle_tasks("calculator")
+				current_tasks = current_tasks .. calculator_task
+			end
 			calculator(player)
 		end
 		if fields.close_calculator then
-			desktop(player, "default", "")
+			equation = ""
+			end_task("calculator")
+			desktop(player, "default", current_tasks)
 		end
 		if fields.minimize_calc then
-			desktop(player, "default",
-			"image_button[1.5,8.25;.75,.75;calculator.png;" ..
-			"calculator_task;;true;false;]")
-			status = "minimized"
+			desktop(player, "default", current_tasks)
+			calculator_status = "minimized"
 		end
 		if fields.calculator_task then
-			if status == "minimized" then
+			active_task = "calculator"
+			change_tasks("calculator")
+			remember_notes(fields)
+			print("[Calc] " .. calculator_status)
+			if calculator_status == "minimized" then
 				calculator(player)
-				status = "maximized"
+				calculator_status = "maximized"
 			else
-				desktop(player, "default",
-				"image_button[1.5,8.25;.75,.75;calculator" ..
-				".png;calculator_task;;true;false;]")
-				status = "minimized"
+				desktop(player, "default", current_tasks)
+				calculator_status = "minimized"
 			end
 		end
 		if fields.one then

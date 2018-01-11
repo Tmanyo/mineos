@@ -6,21 +6,16 @@
 --]]
 
 local a = 0
-local status = {}
-local text = {}
+notepad_status = {}
+text = ""
+notepad_task = {}
 
-function notepad(player)
-	desktop(player, "default_notepad",
-	"image_button[2.4,1.53;.75,.3;;save_notes;Save;true;false;]" ..
-	"image_button[3,1.53;.75,.3;;open_notes;Open;true;false;]" ..
-	"image_button[7.4,1.53;.5,.3;;minimize_np;--;true;false;]" ..
-	"image_button[7.7,1.5;.5,.4;maximize_w.png;maximize_np;;true;false;]" ..
-	"image_button[8,1.53;.5,.3;;close_notepad;X;true;false;]" ..
-	"textarea[2.7,2;6,5.3;notes;;" .. minetest.formspec_escape("") .. "]" ..
-	"image_button[1.5,8.25;.75,.75;notepad.png;notepad_task;;true;false;]")
-end
-
-function notepad_open(player, text)
+function notepad(player, perform)
+	if perform then
+		perform  = perform
+	else
+		perform = ""
+	end
 	desktop(player, "default_notepad",
 	"image_button[2.4,1.53;.75,.3;;save_notes;Save;true;false;]" ..
 	"image_button[3,1.53;.75,.3;;open_notes;Open;true;false;]" ..
@@ -28,55 +23,66 @@ function notepad_open(player, text)
 	"image_button[7.7,1.5;.5,.4;maximize_w.png;maximize_np;;true;false;]" ..
 	"image_button[8,1.53;.5,.3;;close_notepad;X;true;false;]" ..
 	"textarea[2.7,2;6,5.3;notes;;" .. minetest.formspec_escape(text) .. "]" ..
-	"image_button[1.5,8.25;.75,.75;notepad.png;notepad_task;;true;false;]")
+	current_tasks ..
+	perform)
 end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.notepad then
+			if not current_tasks:match("notepad") then
+				register_task("notepad")
+				handle_tasks("notepad")
+				current_tasks = current_tasks .. notepad_task
+			end
+			active_task = "notepad"
+			notepad_status = "minimized"
 			notepad(player)
 		end
 		if fields.save_notes then
 			a = a + 1
 			if a == 1 then
-				desktop(player, "default_notepad",
-				"image_button[2.4,1.53;.75,.3;;save_notes;Save;true;false;]" ..
-				"image_button[3,1.53;.75,.3;;open_notes;Open;true;false;]" ..
-				"image_button[7.4,1.53;.5,.3;;minimize_np;--;true;false;]" ..
-				"image_button[7.7,1.5;.5,.4;maximize_w.png;maximize_np;;true;false;]" ..
-				"image_button[8,1.53;.5,.3;;close_notepad;X;true;false;]" ..
-				"textarea[2.7,2;6,5.3;notes;;" .. fields.notes .. "]" ..
-				"field[2.7,7.5;4,1;filename;Filename: (Enter filename then press save again.);]" ..
-				"image_button[1.5,8.25;.75,.75;notepad.png;notepad_task;;true;false;]")
+				text = fields.notes
+				notepad(player, "field[2.7,7.5;4,1;filename;Filename: (Enter filename then press save again.);]")
 			else
-				files.Documents[fields.filename .. ".mn"] = {}
-				table.insert(files.Documents[fields.filename .. ".mn"], fields.notes)
+				if not files.Documents[player:get_player_name()] then
+					files.Documents[player:get_player_name()] = {}
+				end
+				table.insert(files.Documents[player:get_player_name()], fields.filename .. ".mn" .. " - "  .. fields.notes)
 				save_files()
 				a = 0
-				notepad_open(player, fields.notes)
+				notepad(player)
 			end
 		end
 		if fields.open_notes then
-			file_system(player, files.Documents)
+			register_task("file_system")
+			file_system_status = "minimized"
+			active_task = "file_system"
+			change_tasks("file_system")
+			end_task("notepad")
+			file_system(player, files.Documents[player:get_player_name()])
 			view = "documents"
 		end
 		if fields.close_notepad then
-			desktop(player, "default", "")
+			text = ""
+			end_task("notepad")
+			desktop(player, "default", current_tasks)
 		end
 		if fields.minimize_np then
-			desktop(player, "default",
-			"image_button[1.5,8.25;.75,.75;notepad.png;notepad_task;;true;false;]")
-			status = "minimized"
-			text = fields.notes
+			remember_notes(fields)
+			desktop(player, "default", current_tasks)
+			notepad_status = "minimized"
 		end
 		if fields.notepad_task then
-			if status == "minimized" then
-				notepad_open(player, text)
+			active_task = "notepad"
+			change_tasks("notepad")
+			if notepad_status == "minimized" then
+				notepad(player)
+				notepad_status = "maximized"
 			else
-				desktop(player, "default",
-				"image_button[1,8.25;.75,.75;notepad.png;notepad_task;;true;false;]")
-				status = "minimized"
 				text = fields.notes
+				desktop(player, "default", current_tasks)
+				notepad_status = "minimized"
 			end
 		end
 		if fields.maximize_np then
@@ -86,11 +92,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			"image_button[9.9,0;.5,.3;;minimize_np;--;true;false;]" ..
 			"image_button[10.2,-.05;.5,.4;window_w.png;window_np;;true;false;]" ..
 			"image_button[10.5,0;.5,.3;;close_notepad;X;true;false;]" ..
-			"textarea[.25,.5;11,8.5;notes;;" .. fields.notes .. "]" ..
-			"image_button[1,8.25;.75,.75;notepad.png;notepad_task;;true;false;]")
+			"textarea[.25,.5;11,8.5;notes;;" .. minetest.formspec_escape(text) .. "]" ..
+			current_tasks)
 		end
 		if fields.window_np then
-			notepad_open(player, fields.notes)
+			notepad(player)
 		end
 	end
 end)
