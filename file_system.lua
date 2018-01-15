@@ -133,10 +133,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			get_player_name()]) do
 				table.insert(file, v)
 			end
-			text = minetest.serialize(file[event.row]):
-			gsub("return ", ""):gsub("{", ""):gsub("}", ""):
-			gsub("\"", ""):gsub(".+%.mn %- ", "")
 			if file[event.row] ~= nil then
+				text = minetest.serialize(file[event.row]):
+				gsub("return ", ""):gsub("{", ""):gsub("}", ""):
+				gsub("\"", ""):gsub(".+%.mn %- ", "")
 				register_task("notepad")
 				handle_tasks("notepad")
 				current_tasks = current_tasks .. notepad_task
