@@ -61,7 +61,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			change_tasks("file_system")
 			end_task("notepad")
 			file_system(player, files.Documents[player:get_player_name()])
-			view = "documents"
+			for k,v in pairs(files.Documents[player:get_player_name()]) do
+				table.insert(results, v)
+			end
 		end
 		if fields.close_notepad then
 			text = ""
