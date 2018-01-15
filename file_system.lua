@@ -19,9 +19,9 @@ function file_system(player, t, extra)
 	end
 	desktop(player, bg,
 	"label[5.65,1.89;File System]" ..
-	"image_button[9.2,2.02;.4,.3;close_w.png;close_fs;;true;false;]" ..
-	"image_button[8.9,2.02;.4,.3;maximize_w.png;maximize_fs;;true;false;]" ..
-	"image_button[8.6,2.02;.4,.3;minimize_w.png;minimize_fs;;true;false;]" ..
+	"image_button[9.2,2.02;.35,.295;close_w.png;close_fs;;true;false;]" ..
+	"image_button[8.9,2.02;.38,.297;maximize_w.png;maximize_fs;;true;false;]" ..
+	"image_button[8.6,2.02;.38,.297;minimize_w.png;minimize_fs;;true;false;]" ..
 	"box[2.65,2.3;6.88,.5;black]" ..
 	"textarea[3.2,2.4;4,.5;path;;" ..
 	minetest.formspec_escape(path_to_find) .. "]" ..
