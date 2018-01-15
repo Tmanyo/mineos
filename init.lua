@@ -1,7 +1,7 @@
 files = {
 	Documents = {},
 	Downloads = {},
-	Desktop = {"Notepad","Calculator","Email"},
+	Desktop = {"Notepad","Calculator","Email","Tmusic_Player"},
 	Music = {},
 	Pictures = {},
 	inbox = {},
@@ -10,17 +10,16 @@ files = {
 	important_emails = {},
 }
 
-programs = {"Calculator","Email","File_System","Notepad"}
+programs = {"Calculator","Email","File_System","Notepad","Tmusic_Player"}
 
-view = {}
+local path = minetest.get_modpath("mineos")
 
-dofile(minetest.get_modpath("mineos") .. "/file_system.lua")
-dofile(minetest.get_modpath("mineos") .. "/notepad.lua")
-dofile(minetest.get_modpath("mineos") .. "/mine_menu.lua")
-dofile(minetest.get_modpath("mineos") .. "/calculator.lua")
-dofile(minetest.get_modpath("mineos") .. "/webspider.lua")
-dofile(minetest.get_modpath("mineos") .. "/task_handling.lua")
-dofile(minetest.get_modpath("mineos") .. "/email.lua")
+dofile(path .. "/file_system.lua")
+dofile(path .. "/notepad.lua")
+dofile(path .. "/mine_menu.lua")
+dofile(path .. "/calculator.lua")
+dofile(path .. "/task_handling.lua")
+dofile(path .. "/email.lua")
 
 local f = io.open(minetest.get_worldpath() .. "/mineos_files.db", "r")
 if f == nil then
