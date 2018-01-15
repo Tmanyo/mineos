@@ -20,6 +20,7 @@ dofile(path .. "/mine_menu.lua")
 dofile(path .. "/calculator.lua")
 dofile(path .. "/task_handling.lua")
 dofile(path .. "/email.lua")
+dofile(path .. "/tmusic_player.lua")
 
 local f = io.open(minetest.get_worldpath() .. "/mineos_files.db", "r")
 if f == nil then
