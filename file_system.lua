@@ -126,6 +126,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		end
 		if view == "documents" then
+			if not files.Documents[player:get_player_name()] then
+				files.Documents[player:get_player_name()] = {}
+			end
 			for k,v in pairs(files.Documents[player:
 			get_player_name()]) do
 				table.insert(file, v)
