@@ -19,9 +19,9 @@ function notepad(player, perform)
 	desktop(player, "default_notepad",
 	"image_button[2.4,1.53;.75,.3;;save_notes;Save;true;false;]" ..
 	"image_button[3,1.53;.75,.3;;open_notes;Open;true;false;]" ..
-	"image_button[7.4,1.53;.35,.295;minimize_w.png;minimize_np;;true;false;]" ..
-	"image_button[7.7,1.53;.38,.297;maximize_w.png;maximize_np;;true;false;]" ..
-	"image_button[8,1.53;.38,.297;close_w.png;close_notepad;;true;false;]" ..
+	"image_button[7.4,1.53;.5,.3;;minimize_np;--;true;false;]" ..
+	"image_button[7.7,1.5;.5,.4;maximize_w.png;maximize_np;;true;false;]" ..
+	"image_button[8,1.53;.5,.3;;close_notepad;X;true;false;]" ..
 	"textarea[2.7,2;6,5.3;notes;;" .. minetest.formspec_escape(text) .. "]" ..
 	current_tasks ..
 	perform)
@@ -91,9 +91,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			maximized(player, "full_notepad",
 			"image_button[0,0;.75,.3;;save_notes;Save;true;false;]" ..
 			"image_button[.6,0;.75,.3;;open_notes;Open;true;false;]" ..
-			"image_button[9.9,0;.35,.295;minimize_w.png;minimize_np;;true;false;]" ..
-			"image_button[10.2,0;.38,.297;window_w.png;window_np;;true;false;]" ..
-			"image_button[10.5,0;.38,.297;close_w.png;close_notepad;;true;false;]" ..
+			"image_button[9.9,0;.5,.3;;minimize_np;--;true;false;]" ..
+			"image_button[10.2,-.05;.5,.4;window_w.png;window_np;;true;false;]" ..
+			"image_button[10.5,0;.5,.3;;close_notepad;X;true;false;]" ..
 			"textarea[.25,.5;11,8.5;notes;;" .. minetest.formspec_escape(text) .. "]" ..
 			current_tasks)
 		end
