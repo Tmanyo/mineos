@@ -98,10 +98,10 @@ function desktop(player, background, action)
 		"size[11,9]" ..
 		"background[0,0;11,9;" .. background .. ".png]" ..
 		action ..
-		"image_button[.5,.5;1,1;notepad.png;notepad;;true;false;]" ..
-		"image_button[.5,1.75;1,1;calculator.png;calculator;;true;false;]" ..
+		"image_button[.5,.5;1,1;notepad.png;notepad;;true;false;]" .. "label[.62,1.15;Notepad]" ..
+		"image_button[.5,1.75;1,1;calculator.png;calculator;;true;false;]" .. "label[.62,2.48;Calculator]" ..
 		--"image_button[.5,3;1,1;webspider.png;webspider;;true;false;]" ..
-		"image_button[.5,3;1,1;email.png;email;;true;false;]" ..
+		"image_button[.5,3;1,1;email.png;email;;true;false;]" .. "label[.74,3.55;Email]" ..
 		"image_button[0,8.25;.75,.75;mine_menu.png;mine_menu;;true;false;]" ..
 		"image_button[.75,8.25;.75,.75;file_system.png;file_system;;true;false;]" ..
 		"label[10,8.15;" .. os.date("%I:%M %p\n%x", os.time()) .. "]")
