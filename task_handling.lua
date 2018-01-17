@@ -23,14 +23,17 @@ function handle_tasks(name)
 	local task_number = {}
 	local task_location = {}
 	local task_icon = {}
+	local fs = 0
 	for k,v in pairs(tasks.name) do
-		if v == name then
-			if v:match("file_system") then
-				task_number = (k - 1)
-			else
-				task_number = k
-			end
+		if v:match("file_system") then
+			fs = 1
 		end
+		if v == name then
+			task_number = k
+		end
+	end
+	if fs == 1 and #tasks.name > 2 then
+		task_number = task_number - 1
 	end
 	local positions = {"1.5","2.25","3","3.75"}
 	task_location = positions[task_number]
