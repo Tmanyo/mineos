@@ -9,3 +9,8 @@ Goals:
  - Create realistic, neat, and user friendly applications.
  - I am going to change the structure of the files. (I am going to split the code into different files, instead of bunched up in init.lua.)
  - Each application will have it's own file. (Dofile must be added to init.lua so that the application is ran.)
+
+To-do list:
+ - Add more features to email.
+ - Add a software center to make it possible/easier for third party applications.
+ - Clean up code.
