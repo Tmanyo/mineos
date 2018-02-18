@@ -52,6 +52,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			change_tasks("notepad")
 			notepad(player)
 		end
+		if not fields.save_notes then
+			a = 0
+		end
 		if fields.save_notes then
 			a = a + 1
 			if a == 1 then
