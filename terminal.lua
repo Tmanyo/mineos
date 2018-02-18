@@ -1,3 +1,9 @@
+--[[
+	Mineos Terminal Version 1
+	Contributors:
+		Code & Textures: Tmanyo
+--]]
+
 terminal_status = {}
 terminal_task = {}
 
