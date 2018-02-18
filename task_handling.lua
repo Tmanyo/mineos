@@ -1,3 +1,9 @@
+--[[
+	Mineos Task Handling Version 1
+	Contributors:
+		Code: Tmanyo
+--]]
+
 -----
 -- Functions used to handle tasks on the task bar and window status'.
 -----
