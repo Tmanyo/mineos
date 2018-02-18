@@ -7,6 +7,9 @@
 local equation = ""
 
 function calculator(player)
+	if equation == nil then
+		equation = "Error"
+	end
 	desktop(player, "calculator_bg",
 	"image_button[8,1.55;.5,.3;;close_calculator;X;true;false;]" ..
 	"image_button[7.7,1.45;.5,.5;;minimize_calc;--;true;false;]" ..
@@ -48,6 +51,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				handle_tasks("calculator")
 				current_tasks = current_tasks .. calculator_task
 			end
+			change_tasks("calculator")
 			calculator(player)
 		end
 		if fields.close_calculator then
@@ -63,7 +67,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			active_task = "calculator"
 			change_tasks("calculator")
 			remember_notes(fields)
-			print("[Calc] " .. calculator_status)
 			if calculator_status == "minimized" then
 				calculator(player)
 				calculator_status = "maximized"

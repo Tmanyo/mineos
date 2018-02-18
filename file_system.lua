@@ -11,6 +11,10 @@ function file_system(player, t, extra)
 		path_to_find = ">Desktop"
 	elseif t == files.Music then
 		path_to_find = ">Music"
+	elseif t == files.Downloads then
+		path_to_find = ">Downloads"
+	elseif t == files.Pictures then
+		path_to_find = ">Pictures"
 	end
 	if type(search_word) == "table" then
 		search_word = ""
@@ -25,8 +29,7 @@ function file_system(player, t, extra)
 	desktop(player, bg,
 	"label[5.65,1.85;File System]" ..
 	"image_button[9.25,2;.5,.3;;close_fs;X;true;false;]" ..
-	"image_button[8.9,1.95;.5,.4;maximize_w.png;maximize_fs;;true;false;]" ..
-	"image_button[8.6,2;.5,.3;;minimize_fs;--;true;false;]" ..
+	"image_button[8.95,2;.5,.3;;minimize_fs;--;true;false;]" ..
 	"box[2.65,2.3;6.88,.5;black]" ..
 	"image_button[6.75,2.4;.4,.4;search.png;search_f;;true;false;]" ..
 	"textarea[3.2,2.4;4,.5;path;;" ..
@@ -54,15 +57,30 @@ end
 
 file_system_status = {}
 
+-- Show files without serialized table junk.
 function refine_returns(t)
-	local refined = {}
+	local refined = ""
+	local vals = {}
 	local val = minetest.serialize(t)
 	if t == files.Desktop then
 		refined = val:gsub("return ", ""):gsub("{", ""):gsub("}", ""):
 		gsub("\"", ""):gsub(" ", "")
-	else
+	elseif t == files.Music then
 		refined = val:gsub("return ", ""):gsub("{", ""):gsub("}", ""):
 		gsub("\"", ""):gsub(" ", ""):gsub("-.+,", ","):gsub("-.+", "")
+	elseif t == files.Downloads then
+		refined = val:gsub("return", ""):gsub("{", ""):gsub("}", ""):
+		gsub("\"", "")
+	elseif t == files.Pictures then
+		refined = get_pictures()
+	else
+		for k,v in pairs(t) do
+			table.insert(vals, v)
+		end
+		for k,v in pairs(vals) do
+			refined = refined .. v:gsub("\"", ""):
+			gsub(" ", ""):gsub("-.+", ","):gsub(",$", "")
+		end
 	end
 	if refined == "nil" then
 		refined = ""
@@ -92,7 +110,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				file_system(player, files.Desktop)
 				file_system_status = "maximized"
 			else
-				desktop(player, "default", "")
+				desktop(player, "default", current_tasks)
 				file_system_status = "minimized"
 			end
 		end
@@ -227,6 +245,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			file_system_status = "minimized"
 		end
 		if fields.documents_f then
+			if not files.Documents[player:get_player_name()] then
+				files.Documents[player:get_player_name()] = {}
+			end
 			results = {}
 			file_system(player, files.Documents[player:
 			get_player_name()])
@@ -239,6 +260,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			results = {}
 			file_system(player, files.Desktop)
 			for k,v in pairs(files.Desktop) do
+				table.insert(results, v)
+			end
+		end
+		if fields.downloads_f then
+			results = {}
+			file_system(player, files.Downloads)
+			for k,v in pairs(files.Downloads) do
+				table.insert(results, v)
+			end
+		end
+		if fields.pictures_f then
+			results = {}
+			get_pictures()
+			file_system(player, files.Pictures)
+			for k,v in pairs(files.Pictures) do
 				table.insert(results, v)
 			end
 		end
@@ -295,6 +331,26 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						counter = 0
 						notepad(player)
 					end
+				elseif results[event.row]:match("%.png") then
+					for k,v in pairs(results) do
+						table.insert(file, v)
+					end
+					if file[event.row] ~= nil then
+						register_task("pic_viewer")
+						handle_tasks("pic_viewer")
+						current_tasks = current_tasks ..
+						pic_viewer_task
+						active_task = "pic_viewer"
+						pic_viewer_status = "minimized"
+						search_word = ""
+						results = {}
+						end_task("file_system")
+						counter = 0
+						image_to_display = file[event.row]
+						pic_viewer(player)
+					end
+				elseif results[event.row]:match("Downloads not") then
+					return false
 				else
 					application = string.lower(
 					results[event.row])

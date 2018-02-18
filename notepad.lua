@@ -5,6 +5,7 @@
 		Textures: DI3HARD139
 --]]
 
+local maximize = {}
 local a = 0
 notepad_status = {}
 text = ""
@@ -16,15 +17,26 @@ function notepad(player, perform)
 	else
 		perform = ""
 	end
-	desktop(player, "default_notepad",
-	"image_button[2.4,1.53;.75,.3;;save_notes;Save;true;false;]" ..
-	"image_button[3,1.53;.75,.3;;open_notes;Open;true;false;]" ..
-	"image_button[7.4,1.53;.5,.3;;minimize_np;--;true;false;]" ..
-	"image_button[7.7,1.5;.5,.4;maximize_w.png;maximize_np;;true;false;]" ..
-	"image_button[8,1.53;.5,.3;;close_notepad;X;true;false;]" ..
-	"textarea[2.7,2;6,5.3;notes;;" .. minetest.formspec_escape(text) .. "]" ..
-	current_tasks ..
-	perform)
+	if maximize ~= true then
+		desktop(player, "default_notepad",
+		"image_button[2.4,1.53;.75,.3;;save_notes;Save;true;false;]" ..
+		"image_button[3,1.53;.75,.3;;open_notes;Open;true;false;]" ..
+		"image_button[7.4,1.53;.5,.3;;minimize_np;--;true;false;]" ..
+		"image_button[7.7,1.5;.5,.4;maximize_w.png;maximize_np;;true;false;]" ..
+		"image_button[8,1.53;.5,.3;;close_notepad;X;true;false;]" ..
+		"textarea[2.7,2;6,5.3;notes;;" .. minetest.formspec_escape(text) .. "]" ..
+		current_tasks ..
+		perform)
+	else
+		maximized(player, "full_notepad",
+		"image_button[0,0;.75,.3;;save_notes;Save;true;false;]" ..
+		"image_button[.6,0;.75,.3;;open_notes;Open;true;false;]" ..
+		"image_button[9.9,0;.5,.3;;minimize_np;--;true;false;]" ..
+		"image_button[10.2,-.05;.5,.4;window_w.png;window_np;;true;false;]" ..
+		"image_button[10.5,0;.5,.3;;close_notepad;X;true;false;]" ..
+		"textarea[.25,.5;11,8.5;notes;;" .. minetest.formspec_escape(text) .. "]" ..
+		current_tasks)
+	end
 end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -37,21 +49,29 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 			active_task = "notepad"
 			notepad_status = "minimized"
+			change_tasks("notepad")
 			notepad(player)
 		end
 		if fields.save_notes then
 			a = a + 1
 			if a == 1 then
 				text = fields.notes
-				notepad(player, "field[2.7,7.5;4,1;filename;Filename: (Enter filename then press save again.);]")
+				maximize = false
+				notepad(player, "field[2.7,7.5;4,1;filename;" ..
+				"Filename: (Enter filename then press save again.);]")
 			else
 				if not files.Documents[player:get_player_name()] then
 					files.Documents[player:get_player_name()] = {}
 				end
-				table.insert(files.Documents[player:get_player_name()], fields.filename .. ".mn" .. " - "  .. fields.notes)
-				save_files()
-				a = 0
-				notepad(player)
+				if fields.filename ~= "" then
+					table.insert(files.Documents[player:
+					get_player_name()], fields.filename ..
+					".mn - "  .. fields.notes)
+					save_files()
+					a = 0
+					remember_notes(fields)
+					notepad(player)
+				end
 			end
 		end
 		if fields.open_notes then
@@ -66,6 +86,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		end
 		if fields.close_notepad then
+			maximize = false
 			text = ""
 			end_task("notepad")
 			desktop(player, "default", current_tasks)
@@ -88,16 +109,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		end
 		if fields.maximize_np then
-			maximized(player, "full_notepad",
-			"image_button[0,0;.75,.3;;save_notes;Save;true;false;]" ..
-			"image_button[.6,0;.75,.3;;open_notes;Open;true;false;]" ..
-			"image_button[9.9,0;.5,.3;;minimize_np;--;true;false;]" ..
-			"image_button[10.2,-.05;.5,.4;window_w.png;window_np;;true;false;]" ..
-			"image_button[10.5,0;.5,.3;;close_notepad;X;true;false;]" ..
-			"textarea[.25,.5;11,8.5;notes;;" .. minetest.formspec_escape(text) .. "]" ..
-			current_tasks)
+			maximize = true
+			notepad(player)
 		end
 		if fields.window_np then
+			maximize = false
 			notepad(player)
 		end
 	end

@@ -1,15 +1,10 @@
---[[
-	Mineos Email Version 1
-	Contributors:
-		Code & Textures: Tmanyo
---]]
-
 local mail_type = {}
 local selected = {}
 local item = {}
 email_task = {}
 email_status = {}
 
+-- Create tables if not already present.
 minetest.register_on_joinplayer(function(player)
 	if not files.inbox[player:get_player_name()] then
 		files.inbox[player:get_player_name()] = {}
@@ -20,16 +15,20 @@ minetest.register_on_joinplayer(function(player)
 	save_files()
 end)
 
+-- Get incoming email.
 function inbox_items(player)
 	local emails = ""
 	local index,email
 	for index,email in ipairs(files.inbox[player:get_player_name()]) do
-		if minetest.serialize(files.important_emails[player:get_player_name()]):match(email.body) then
+		-- Mark emails as important.
+		if minetest.serialize(files.important_emails[player:get_player_name()]):match(email.body:sub(1,30)) then
 			emails = emails .. "#FFFF00From: " .. email.sender ..
 			" -- Subject: " .. email.subject
-		elseif minetest.serialize(files.read_emails[player:get_player_name()]):match(email.body) then
+			-- Mark emails as read.
+		elseif minetest.serialize(files.read_emails[player:get_player_name()]):match(email.body:sub(1,30)) then
 			emails = emails .. "From: " .. email.sender ..
 			" -- Subject: " .. email.subject
+			-- Mark unimportant and unread emails.
 		else
 			emails = emails .. "#FF0000From: " .. email.sender ..
 			" -- Subject: " .. email.subject
@@ -41,6 +40,7 @@ function inbox_items(player)
 	return emails
 end
 
+-- Get sent items.
 function sent_items(player)
 	local sent_mail = ""
 	local index,sent
@@ -66,7 +66,6 @@ function email(player, type)
 	minetest.colorize("#000000", "--") .. ";true;false;]" ..
 	"image_button[9.7,1.53;.5,.3;;close_email;" ..
 	minetest.colorize("#000000", "X") .. ";true;false;]" ..
-	--"label[6,1.45;#FF0000" .. "E" .. "#000000" .. "mail]" ..
 	"image_button[2.7,2;1.5,.5;;compose;" ..
 	minetest.colorize("#FF0000", "Compose") .. ";true;false;]" ..
 	"image_button[2.55,2.7;1.5,.5;;inbox_mail;" ..
@@ -86,12 +85,12 @@ function email(player, type)
 	current_tasks)
 end
 
-function compose(player)
+function compose(player, replier)
 	desktop(player, "default_email",
 	"box[2.65,1.48;7.4,4.95;black]" ..
 	"textarea[3.2,1.75;5,.5;recipient;" ..
 	minetest.colorize("#000000", "Recipient") .. ";" ..
-	minetest.formspec_escape("") .. "]" ..
+	minetest.formspec_escape(replier) .. "]" ..
 	"textarea[3.2,2.5;5,.5;subject;" ..
 	minetest.colorize("#000000", "Subject") .. ";" ..
 	minetest.formspec_escape("") .. "]" ..
@@ -105,11 +104,13 @@ function compose(player)
 	current_tasks)
 end
 
-function read_mail(player, table, number)
+-- Show sender, subject, and body.
+function read_mail(player, table, number, addon)
 	local sender = {}
 	local subject = {}
 	local body = {}
 	local extra = ""
+	-- Get email specific information.
 	local index,email
 	for index,email in ipairs(table) do
 		if index == number then
@@ -122,6 +123,7 @@ function read_mail(player, table, number)
 			body = email.body
 		end
 	end
+	-- Check for inbox or sentbox.
 	if mail_type == "inbox" then
 		extra = "label[3.2,2;" .. minetest.colorize("#000000", "From: " ..
 		sender) .. "]"
@@ -129,14 +131,23 @@ function read_mail(player, table, number)
 		extra = "label[3.2,2;" .. minetest.colorize("#000000", "To: " ..
 		sender) .. "]"
 	end
+	-- Refine body text.
+	local email_body = wrap_text(body, 80):gsub("\n ", "\n"):gsub(",",
+	minetest.formspec_escape(",")):gsub("\n", ",#000000")
+	extra = extra .. addon
+	-- Display formspec.
 	desktop(player, "default_email",
 	extra ..
 	"label[3.2,2.5;" .. minetest.colorize("#000000", "Subject: " ..
 	subject) .. "]" ..
-	"textlist[3.2,3.25;6,4;body_text;#000000" .. wrap_text(body, 80) ..
+	"textlist[3.2,3.25;6,2.5;body_text;#000000" .. email_body ..
 	";;true]" ..
 	"image_button[2.8,6;1,.5;;back;" .. minetest.colorize("#FF0000",
 	"Back") .. ";true;false;]" ..
+	"image_button[4,6;1,.5;;reply;" .. minetest.colorize("#FF0000",
+	"Reply") .. ";true;false;]" ..
+	"image_button[5.2,6;1,.5;;forward;" .. minetest.colorize("#FF0000",
+	"Forward") .. ";true;false;]" ..
 	current_tasks)
 	return body
 end
@@ -153,13 +164,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			active_task = "email"
 			email_status = "minimized"
 			mail_type = "inbox"
+			change_tasks("email")
 			if not files.inbox[player:get_player_name()] then
 				files.inbox[player:get_player_name()] = {}
 			end
 			email(player, inbox_items(player))
 		end
 		if fields.compose then
-			compose(player)
+			compose(player, "")
 		end
 		if fields.minimize_email then
 			email_status = "minimized"
@@ -180,6 +192,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				else
 					subject = fields.subject
 				end
+				-- Save email contents.
 				table.insert(files.inbox[fields.recipient], 1,
 				{sender = player:get_player_name(),
 				subject = subject, body = fields.body})
@@ -225,24 +238,96 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				email(player, sent_items(player))
 			end
 		end
+		if fields.reply then
+			if mail_type == "inbox" then
+				local sender = {}
+				for i,v in ipairs(files.inbox[player:get_player_name()]) do
+					if i == item then
+						sender = v.sender
+					end
+				end
+				if type(sender) ~= "table" then
+					compose(player, sender)
+				end
+			end
+		end
+		if fields.forward then
+			if mail_type == "inbox" then
+				read_mail(player, files.inbox[player:get_player_name()],
+				item, "field[6.4,2;4,1;forward_to;" ..
+				minetest.colorize("#000000", "Recipients:") .. ";]" ..
+				"box[6,1.5;4,1;black]" .. "field_close_on_enter[" ..
+				"forward_to;false]")
+			end
+		end
+		if fields.forward_to then
+			local recipients = {}
+			if fields.forward_to ~= "" then
+				for recipient in fields.forward_to:gmatch("([^,]+),") do
+					table.insert(recipients, recipient)
+				end
+				if fields.forward_to:match(",.+$") then
+					table.insert(recipients,
+					fields.forward_to:match(",.+$"))
+				end
+				if type(recipients) == "table" then
+					table.insert(recipients, fields.forward_to)
+				end
+				local sender = {}
+				local subject = {}
+				local body = {}
+				for i,v in ipairs(files.inbox[player:get_player_name()]) do
+					if i == item then
+						sender = v.sender
+						subject = v.subject
+						body = v.body
+					end
+				end
+				for k,v in pairs(recipients) do
+					if not files.inbox[v] then
+						files.inbox[v] = {}
+					end
+					table.insert(files.inbox[v], 1,
+					{sender = sender ..
+					" - Forwarded by " .. player:get_player_name(),
+					subject = subject, body = body})
+				end
+				save_files()
+				read_mail(player, files.inbox[player:get_player_name()],
+				item, "")
+			end
+		end
 		local list = minetest.explode_textlist_event(fields.inbox)
 		if list.type == "DCL" then
+			item = list.index
 			local body = {}
 			if mail_type == "inbox" then
-				body = read_mail(player,
-				files.inbox[player:get_player_name()],
-				list.index)
-				if not files.read_emails[player:get_player_name()] then
-					files.read_emails[player:get_player_name()] = {}
-				end
-				if not minetest.serialize(files.read_emails[player:get_player_name()]):match(body) then
-					table.insert(files.read_emails[player:get_player_name()], body)
-					save_files()
+				if #files.inbox[player:get_player_name()] > 0 then
+					-- Read email.
+					body = read_mail(player,
+					files.inbox[player:get_player_name()],
+					list.index, "")
+					if not files.read_emails[player:get_player_name()] then
+						files.read_emails[player:get_player_name()] = {}
+					end
+					-- Mark email as read.
+					if #files.read_emails[player:get_player_name()] < 1 then
+						table.insert(files.read_emails[player:get_player_name()], body:sub(1,30))
+						save_files()
+					else
+						if not minetest.serialize(files.read_emails[player:get_player_name()]):match(body:sub(1,30)) then
+							table.insert(files.read_emails[player:get_player_name()], body:sub(1,30))
+							save_files()
+						end
+					end
 				end
 			else
-				read_mail(player,
-				files.sent[player:get_player_name()],
-				list.index)
+				-- Read sent mail.
+				if #files.sent[player:get_player_name()] > 0 then
+					read_mail(player,
+					files.sent[player:get_player_name()],
+					list.index, "")
+				end
 			end
 		end
 		if list.type == "CHG" then
@@ -283,10 +368,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					end
 					if not minetest.serialize(
 					files.read_emails[player:get_player_name()]):
-					match(search) then
+					match(search:sub(1,30)) then
 						table.insert(
 						files.read_emails[player:
-						get_player_name()], search)
+						get_player_name()], search:sub(1,30))
 						save_files()
 					end
 					email(player, inbox_items(player))
@@ -313,10 +398,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					end
 					if not minetest.serialize(
 					files.important_emails[player:
-					get_player_name()]):match(search) then
+					get_player_name()]):match(search:sub(1,30)) then
 						table.insert(
 						files.important_emails[player:
-						get_player_name()], search)
+						get_player_name()], search:sub(1,30))
 						save_files()
 					end
 					email(player, inbox_items(player))
