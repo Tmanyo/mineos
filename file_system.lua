@@ -79,6 +79,14 @@ function refine_returns(t)
 		gsub("\"", "")
 	elseif t == files.Pictures then
 		refined = get_pictures()
+	elseif t == results then
+		for k,v in pairs(t) do
+			if k == 1 then
+				refined = v
+			else
+				refined = refined .. "," .. v
+			end
+		end
 	else
 		for k,v in pairs(t) do
 			table.insert(vals, v)
