@@ -1,3 +1,9 @@
+--[[
+	Mineos File System Version 1
+	Contributors:
+		Code & Textures: Tmanyo
+--]]
+
 results = {}
 music_row = {}
 local path_to_find = {}
