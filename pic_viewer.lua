@@ -1,3 +1,9 @@
+--[[
+	Mineos Pic_View Version 1
+	Contributors:
+		Code & Textures: Tmanyo
+--]]
+
 local maximize = {}
 
 pic_viewer_task = {}
