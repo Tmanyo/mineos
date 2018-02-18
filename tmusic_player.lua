@@ -1,3 +1,9 @@
+--[[
+	Mineos Tmusic_Player Version 1
+	Contributors:
+		Code & Textures: Tmanyo
+--]]
+
 music_playing = nil
 
 tmusic_player_task = {}
