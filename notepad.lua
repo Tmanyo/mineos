@@ -75,6 +75,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		end
 		if fields.open_notes then
+			text = ""
+			a = 0
 			register_task("file_system")
 			file_system_status = "minimized"
 			active_task = "file_system"
