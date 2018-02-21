@@ -93,9 +93,7 @@ function end_task(name)
 				current_tasks = current_tasks ..
 				_G[v .. "_task"]
 			else
-				if #remaining == 1 then
-					current_tasks = ""
-				end
+				current_tasks = ""
 			end
 			remaining = {}
 		end
