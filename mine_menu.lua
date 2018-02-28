@@ -41,7 +41,7 @@ function mine_menu(player)
 	mine_menu_open = true
 	desktop(player, "menu",
 	"textlist[0,4.7;3,3;menu_results;" .. result_list .. ";;true]" ..
-	"field[.25,7.6;2.5,1;program_find;;]" ..
+	"field[.25,7.6;2.5,1;program_find;;" .. minetest.formspec_escape("") .. "]" ..
 	"button[2.3,7.5;1,.5;search_programs;Search]" ..
 	current_tasks)
 end
@@ -69,7 +69,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				if string.lower(fields.program_find) == "all"
 				then
 					minemenu_results = programs
-				else
+				elseif fields.program_find:match("%w") then
 					for k,v in pairs(programs) do
 						if string.lower(
 						fields.program_find) ==

@@ -1,9 +1,3 @@
---[[
-	Mineos File System Version 1
-	Contributors:
-		Code & Textures: Tmanyo
---]]
-
 results = {}
 music_row = {}
 local path_to_find = {}
@@ -56,6 +50,10 @@ function file_system(player, t, extra)
 	minetest.colorize("#FF0000", "Delete") .. ";true;false;]" ..
 	"box[3.8,2.79;.1,3.35;black]" ..
 	"tableoptions[background=#7AC5CD]" ..
+	"tablecolumns[" ..
+		"image,align=center,1=mn.png,2=app.png,3=unknown.png" ..
+		",4=music.png,5=picture.png;" ..
+		"text]" ..
 	"table[4,2.9;5.2,3;contents;" .. refine_returns(t) .. ";]" ..
 	current_tasks ..
 	extra)
@@ -69,40 +67,56 @@ function refine_returns(t)
 	local vals = {}
 	local val = minetest.serialize(t)
 	if t == files.Desktop then
-		refined = val:gsub("return ", ""):gsub("{", ""):gsub("}", ""):
-		gsub("\"", ""):gsub(" ", "")
+		for k,v in pairs(files.Desktop) do
+			if k ~= #files.Desktop then
+				refined = refined .. "2," .. v .. ","
+			else
+				refined = refined .. "2," .. v
+			end
+		end
 	elseif t == files.Music then
-		refined = val:gsub("return ", ""):gsub("{", ""):gsub("}", ""):
-		gsub("\"", ""):gsub(" ", ""):gsub("-.+,", ","):gsub("-.+", "")
+		for k,v in pairs(files.Music) do
+			if k ~= #files.Music then
+				refined = refined .. "4," .. v .. ","
+			else
+				refined = refined .. "4," .. v
+			end
+		end
 	elseif t == files.Downloads then
-		refined = val:gsub("return", ""):gsub("{", ""):gsub("}", ""):
-		gsub("\"", "")
+		for k,v in pairs(files.Downloads) do
+			refined = "3," .. v
+		end
 	elseif t == files.Pictures then
-		refined = get_pictures()
-	elseif t == results then
+		refined = get_pictures():gsub(",", ",5,"):gsub("^", "5,")
+	else
 		for k,v in pairs(t) do
-			if k == 1 then
+			if v:match("%.mn") then
+				refined = refined .. "1," .. minetest.formspec_escape(v:gsub("\"", ""):
+				gsub(" ", "")):gsub("-.+", ",")
+			elseif v:match("%.ogg") then
+				refined = refined .."4," .. v .. ","
+			elseif v:match("%.png") then
+				refined = refined .. "5," .. v .. ","
+			elseif minetest.serialize(files.Desktop):match(v) then
+				refined = refined .. "2," .. v .. ","
+			elseif #t > 1 and k == 1 then
+				refined = v .. ","
+			elseif #t == 1 then
 				refined = v
 			else
 				refined = refined .. "," .. v
 			end
 		end
-	else
-		for k,v in pairs(t) do
-			table.insert(vals, v)
-		end
-		for k,v in pairs(vals) do
-			refined = refined .. v:gsub("\"", ""):
-			gsub(" ", ""):gsub("-.+", ","):gsub(",$", "")
-		end
 	end
 	if refined == "nil" then
 		refined = ""
+	elseif refined:match(",$") then
+		refined = refined:gsub(",$", "")
 	end
 	return refined
 end
 
-local counter = 0
+counter = 0
 local selected = {}
 local item = {}
 local table_to_search = {}
@@ -242,6 +256,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						table.insert(results, v)
 					end
 				end
+				for k,v in pairs(files.Pictures) do
+					if v == string.lower(search_object) then
+						table.insert(results, v)
+					elseif v:match("^" .. string.lower(
+					search_object):sub(1,3)) then
+						table.insert(results, v)
+					end
+				end
 			end
 			path_to_find = fields.path
 			search_word = fields.search_fs
@@ -333,10 +355,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						gsub("return ", ""):gsub("{", ""):
 						gsub("}", ""):gsub("\"", ""):
 						gsub(".+%.mn %- ", "")
-						register_task("notepad")
-						handle_tasks("notepad")
-						current_tasks = current_tasks ..
-						notepad_task
+						if not minetest.serialize(tasks.name):
+						match("notepad") then
+							register_task("notepad")
+							handle_tasks("notepad")
+							current_tasks = current_tasks ..
+							notepad_task
+						end
 						active_task = "notepad"
 						notepad_status = "minimized"
 						search_word = ""
@@ -392,20 +417,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.delete then
 			if files.Documents[player:get_player_name()] ~= nil then
 				if selected == "true" then
-					if results[item]:match("%.mn") then
-						file_system(player,
-						files.Documents[player:
-						get_player_name()],
-						"label[4,6.7;" ..
-						minetest.colorize("#000000",
-						"Are you sure you want to" ..
-						" delete this item?") .. "]" ..
-						"image_button[4,7.2;1,.3;;yes;" ..
-						minetest.colorize("#FF0000", "Yes") ..
-						";true;false;]" ..
-						"image_button[5.2,7.2;1,.3;;no;" ..
-						minetest.colorize("#FF0000", "No") ..
-						";true;false;]")
+					if #results > 0 then
+						if results[item]:match("%.mn") then
+							file_system(player,
+							files.Documents[player:
+							get_player_name()],
+							"label[4,6.7;" ..
+							minetest.colorize("#000000",
+							"Are you sure you want to" ..
+							" delete this item?") .. "]" ..
+							"image_button[4,7.2;1,.3;;yes;" ..
+							minetest.colorize("#FF0000", "Yes") ..
+							";true;false;]" ..
+							"image_button[5.2,7.2;1,.3;;no;" ..
+							minetest.colorize("#FF0000", "No") ..
+							";true;false;]")
+						end
 					end
 				end
 			end

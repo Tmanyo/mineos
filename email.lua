@@ -1,9 +1,3 @@
---[[
-	Mineos Email Version 1
-	Contributors:
-		Code & Textures: Tmanyo
---]]
-
 local mail_type = {}
 local selected = {}
 local item = {}
@@ -91,7 +85,10 @@ function email(player, type)
 	current_tasks)
 end
 
-function compose(player, replier)
+function compose(player, replier, subject)
+	if not subject then
+		subject = ""
+	end
 	desktop(player, "default_email",
 	"box[2.65,1.48;7.4,4.95;black]" ..
 	"textarea[3.2,1.75;5,.5;recipient;" ..
@@ -99,7 +96,7 @@ function compose(player, replier)
 	minetest.formspec_escape(replier) .. "]" ..
 	"textarea[3.2,2.5;5,.5;subject;" ..
 	minetest.colorize("#000000", "Subject") .. ";" ..
-	minetest.formspec_escape("") .. "]" ..
+	minetest.formspec_escape(subject) .. "]" ..
 	"textarea[3.2,3.25;5,3;body;" ..
 	minetest.colorize("#000000", "Body") .. ";" ..
 	minetest.formspec_escape("") .. "]" ..
@@ -138,7 +135,7 @@ function read_mail(player, table, number, addon)
 		sender) .. "]"
 	end
 	-- Refine body text.
-	local email_body = wrap_text(body, 80):gsub("\n ", "\n"):gsub(",",
+	local email_body = wrap_text(body, 75):gsub("\n ", "\n"):gsub(",",
 	minetest.formspec_escape(",")):gsub("\n", ",#000000")
 	extra = extra .. addon
 	-- Display formspec.
@@ -230,7 +227,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			active_task = "email"
 			change_tasks("email")
 			if email_status == "minimized" then
-				email(player, inbox_items(player))
+				if mail_type == "inbox" then
+					email(player, inbox_items(player))
+				else
+					email(player, sent_items(player))
+				end
 				email_status = "maximized"
 			else
 				desktop(player, "default", current_tasks)
@@ -247,13 +248,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.reply then
 			if mail_type == "inbox" then
 				local sender = {}
+				local subject = {}
 				for i,v in ipairs(files.inbox[player:get_player_name()]) do
 					if i == item then
 						sender = v.sender
+						subject = "Re: " .. v.subject
 					end
 				end
 				if type(sender) ~= "table" then
-					compose(player, sender)
+					compose(player, sender, subject)
 				end
 			end
 		end

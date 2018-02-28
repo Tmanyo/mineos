@@ -1,9 +1,3 @@
---[[
-	Mineos Task Handling Version 1
-	Contributors:
-		Code: Tmanyo
---]]
-
 -----
 -- Functions used to handle tasks on the task bar and window status'.
 -----
@@ -77,6 +71,9 @@ function end_task(name)
 	local remaining = {}
 	for k,v in pairs(tasks.name) do
 		if v == name then
+			if name == "file_system" then
+				counter = 0
+			end
 			task_number = k
 		else
 			table.insert(remaining, v)
@@ -85,15 +82,14 @@ function end_task(name)
 	table.remove(tasks.name, task_number)
 	if #remaining >= 1 then
 		for k,v in pairs(remaining) do
-			if v ~= "file_system" then
-				handle_tasks(v)
+			if v == "file_system" then
+				current_tasks = ""
+			else
 				if k == 1 then
 					current_tasks = ""
 				end
 				current_tasks = current_tasks ..
-				_G[v .. "_task"]
-			else
-				current_tasks = ""
+				handle_tasks(v)
 			end
 			remaining = {}
 		end
