@@ -10,9 +10,12 @@ function calculator(player)
 	if equation == nil then
 		equation = "Error"
 	end
-	desktop(player, "calculator_bg",
-	"image_button[8,1.55;.5,.3;;close_calculator;X;true;false;]" ..
-	"image_button[7.7,1.45;.5,.5;;minimize_calc;--;true;false;]" ..
+	desktop(player, files.theme[player:get_player_name()] ..
+	"^calculator_overlay.png",
+	"image_button[7.9,1.49;.6,.4" .. get_button_style(player, "calculator",
+	"white").close[player:get_player_name()] .. ";true;false;]" ..
+	"image_button[7.5,1.46;.6,.45" .. get_button_style(player, "calculator",
+	"white").min[player:get_player_name()] .. ";true;false;]" ..
 	"field[4.6,2;4,1;equation;;" .. minetest.formspec_escape(equation) ..
 	"]" ..
 	"button[4.3,2.7;1,1;one;1]" ..
@@ -57,10 +60,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.close_calculator then
 			equation = ""
 			end_task("calculator")
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 		end
-		if fields.minimize_calc then
-			desktop(player, "default", current_tasks)
+		if fields.minimize_calculator then
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 			calculator_status = "minimized"
 		end
 		if fields.calculator_task then
@@ -71,7 +76,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				calculator(player)
 				calculator_status = "maximized"
 			else
-				desktop(player, "default", current_tasks)
+				desktop(player, files.theme[player:get_player_name()],
+				current_tasks)
 				calculator_status = "minimized"
 			end
 		end

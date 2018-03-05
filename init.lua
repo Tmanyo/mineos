@@ -1,20 +1,22 @@
 files = {
 	Documents = {},
-	Downloads = {"Downloads not currently supported in MineOS v1.0."},
-	Desktop = {"Notepad","Calculator","Email","Tmusic_Player","Pic_Viewer"},
+	Downloads = {"Downloads not currently supported in MineOS v0.1."},
+	Desktop = {"Notepad","Calculator","Email","Tmusic_Player","Pic_Viewer",
+	"Settings"},
 	Music = {},
 	Pictures = {},
 	inbox = {},
 	sent = {},
 	read_emails = {},
 	important_emails = {},
-	posts = {},
+	theme = {},
+	button_theme = {},
 }
 
-programs = {"Calculator","Email","File_System","Notepad","Pic_Viewer","Terminal",
-"Tmusic_Player"}
+programs = {"Calculator","Email","File_System","Notepad","Pic_Viewer","Settings",
+"Terminal","Tmusic_Player"}
 
-version = "MineOS v1.0"
+version = "MineOS v0.1"
 lines = {}
 
 local form_closed = {}
@@ -31,6 +33,7 @@ dofile(path .. "/email.lua")
 dofile(path .. "/tmusic_player.lua")
 dofile(path .. "/terminal.lua")
 dofile(path .. "/pic_viewer.lua")
+dofile(path .. "/settings.lua")
 
 -----
 -- Data Saving Functions
@@ -133,6 +136,24 @@ function wrap_textlist_text(text, limit)
 	return new_text
 end
 
+-- Escape Lua magic characters from text.
+local special_characters = {"[","(",")","%"}
+function escape_characters(text)
+	local new_text = ""
+	for character in text:gmatch(".") do
+		for k,v in pairs(special_characters) do
+			if character == v then
+				new_text = new_text .. "%" .. character
+			else
+				if k == #special_characters then
+					new_text = new_text .. character
+				end
+			end
+		end
+	end
+	return new_text
+end
+
 -- The main formspec function.
 mine_menu_open = {}
 function desktop(player, background, action)
@@ -142,13 +163,16 @@ function desktop(player, background, action)
 		icons_to_hide = "image_button[.5,4.25;1,1;tmusic_player.png;tmusic_player;;true;false;]" ..
 		"tooltip[tmusic_player;Tmusic Player]" ..
 		"image_button[.5,5.5;1,1;pic_viewer.png;pic_viewer;;true;false;]" ..
-		"tooltip[pic_viewer;Pic Viewer]"
+		"tooltip[pic_viewer;Pic Viewer]" ..
+		"image_button[.5,6.75;1,1;settings.png;settings;;true;false;]" ..
+		"tooltip[settings;Settings]"
 	else
 		icons_to_hide = ""
 	end
 	minetest.show_formspec(player:get_player_name(), "mineos:desktop",
 		"size[11,9]" ..
-		"background[0,0;11,9;" .. background .. ".png]" ..
+		"bgcolor[#3B3A39;false]" ..
+		"background[0,0;11,9;" .. background .. "]" ..
 		action ..
 		"image_button[.5,.5;1,1;notepad.png;notepad;;true;false;]" ..
 		"tooltip[notepad;Notepad]" ..
@@ -161,7 +185,8 @@ function desktop(player, background, action)
 		"tooltip[mine_menu;Mine Menu]" ..
 		"image_button[.75,8.25;.75,.75;file_system.png;file_system;;true;false;]" ..
 		"tooltip[file_system;File System]" ..
-		"label[10,8.15;" .. os.date("%I:%M %p\n%x", os.time()) .. "]")
+		"label[10,8.15;" .. os.date("%I:%M %p\n%x", os.time()) .. "]" ..
+		"image[3.75,8.75;4,1;mineos_logo.png]")
 end
 
 -- Create a timer for the clock if only the desktop is being shown.
@@ -174,7 +199,8 @@ local function timer(player, fields)
 			if active_task == "" then
 				if form_closed ~= true then
 					if exempt_clock ~= true then
-						desktop(player, "default", "")
+						desktop(player, files.theme[
+						player:get_player_name()], "")
 						tmr = 0
 					end
 				end
@@ -205,11 +231,13 @@ end)
 function maximized(player, background, action)
 	minetest.show_formspec(player:get_player_name(), "mineos:desktop",
 		"size[11,9]" ..
+		"bgcolor[#3B3A39;false]" ..
 		"background[0,0;11,9;" .. background .. ".png]" ..
 		action ..
 		"image_button[0,8.25;.75,.75;mine_menu.png;mine_menu;;true;false;]" ..
 		"image_button[.75,8.25;.75,.75;file_system.png;file_system;;true;false;]" ..
-		"label[10,8.15;" .. os.date("%I:%M %p\n%x", os.time()) .. "]")
+		"label[10,8.15;" .. os.date("%I:%M %p\n%x", os.time()) .. "]" ..
+		"image[3.75,8.75;4,1;mineos_logo.png]")
 end
 
 -----
@@ -223,6 +251,7 @@ minetest.register_node("mineos:computer_on", {
 		{name="mineos_computer.png"},{name="default_screen.png"},
 	},
 	paramtype = "light",
+	light_source = 5,
 	paramtype2 = "facedir",
 	selection_box = {
           	type = "fixed",
@@ -239,7 +268,11 @@ minetest.register_node("mineos:computer_on", {
 	groups = {cracky=3,crumbly=3,falling_node=1,
 	not_in_creative_inventory=1},
 	on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-		desktop(player, "default", "")
+		if not files.theme[player:get_player_name()] then
+			files.theme[player:get_player_name()] = "green_theme.png"
+			save_files()
+		end
+		desktop(player, files.theme[player:get_player_name()], "")
 		timer(player, field_info)
 	end,
 	on_punch = function(pos, node, player, pointed_thing)

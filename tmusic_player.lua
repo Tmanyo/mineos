@@ -1,15 +1,10 @@
---[[
-	Mineos Tmusic_Player Version 1
-	Contributors:
-		Code & Textures: Tmanyo
---]]
-
 music_playing = nil
 
 tmusic_player_task = {}
 tmusic_player_status = {}
 
 local song = {}
+local row = {}
 
 minetest.mkdir(minetest.get_modpath("mineos") .. "/sounds")
 
@@ -28,11 +23,14 @@ function tmusic_player(player)
 	else
 		select = ""
 	end
-	desktop(player, "default_tmusic",
+	desktop(player, files.theme[player:get_player_name()] ..
+	"^tmusic_player_overlay.png",
 	"label[2.5,2.5;Playable songs:]" ..
 	"image[5,2;3,.75;tmusic_logo.png]" ..
-	"image_button[9.9,2.15;.5,.3;;close_tmusic;X;true;false;]" ..
-	"image_button[9.6,2.15;.5,.3;;minimize_tmusic;--;true;false;]" ..
+	"image_button[9.8,2.03;.6,.4" .. get_button_style(player,
+	"tmusic_player", "white").close[player:get_player_name()] .. ";true;false;]" ..
+	"image_button[9.4,2;.6,.45" .. get_button_style(player,
+	"tmusic_player", "white").min[player:get_player_name()] .. ";true;false;]" ..
 	"textlist[2.5,3;6,3.75;song_list;".. get_music() .. ";" .. select .. ";]" ..
 	"image_button[8.5,5.5;1.5,.5;;stop;Stop;true;false;]" ..
 	"image_button[8.5,5;1.5,.5;;loop_current;Loop Current;true;false;]" ..
@@ -55,14 +53,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			tmusic_player_status = "minimized"
 			tmusic_player(player)
 		end
-		if fields.close_tmusic then
+		if fields.close_tmusic_player then
 			end_task("tmusic_player")
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 			music_row = {}
 		end
-		if fields.minimize_tmusic then
+		if fields.minimize_tmusic_player then
 			tmusic_player_status = "minimized"
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 		end
 		if fields.tmusic_player_task then
 			remember_notes(fields)
@@ -72,7 +72,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				tmusic_player(player)
 				tmusic_player_status = "maximized"
 			else
-				desktop(player, "default", current_tasks)
+				desktop(player, files.theme[player:get_player_name()],
+				current_tasks)
 				tmusic_player_status = "minimized"
 			end
 		end
@@ -105,6 +106,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local event = minetest.explode_textlist_event(fields.song_list)
 		if event.type == "CHG" then
 			if #files.Music >= 1 then
+				row = event.index
 				if music_playing ~= nil then
 					music_playing = minetest.sound_stop(
 					music_playing)
@@ -131,16 +133,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local help_text_3 = "To stop music" ..
 			minetest.formspec_escape(",") .. " click the stop" ..
 			" button.  If there was no music playing to begin with" ..
-			minetest.formspec_escape(",") .. " nothing will happen."
+			minetest.formspec_escape(",") .. " nothing, will happen."
 			local help_text_4 = "To repeat the current song" ..
 			minetest.formspec_escape(",") .. " click the song and" ..
 			" click Loop Current."
-			desktop(player, "default_tmusic",
+			desktop(player, files.theme[player:get_player_name()] ..
+			"^tmusic_player_overlay.png",
 			"label[6,2;Help]" ..
 			"textlist[2.5,2.5;7,3;help_info;" .. "Adding Music:," ..
-			wrap_text(help_text_1, 90) .. ",,Playing Music:," ..
+			wrap_textlist_text(help_text_1, 80) .. ",,Playing Music:," ..
 			help_text_2 .. ",,Stopping Music:," ..
-			wrap_text(help_text_3, 90) .. ",,Looping Current Song:," ..
+			help_text_3 .. ",,Looping Current Song:," ..
 			help_text_4 .. ";;true]" ..
 			"image[3,6;3,.75;tmusic_logo.png]" ..
 			"image_button[7,6;1.5,.5;;music_back;Back;true;false;]" ..

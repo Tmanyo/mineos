@@ -1,9 +1,3 @@
---[[
-	Mineos Terminal Version 1
-	Contributors:
-		Code & Textures: Tmanyo
---]]
-
 terminal_status = {}
 terminal_task = {}
 
@@ -13,10 +7,13 @@ terminal_text = ""
 function terminal(player)
 	local starter = {}
 	starter = player:get_player_name() .. ">"
-	desktop(player, "default_terminal",
+	desktop(player, files.theme[player:get_player_name()] ..
+	"^terminal_overlay.png",
 	"label[6.25,2;Terminal]" ..
-	"image_button[9.7,2.1;.5,.3;;close_terminal;X;true;false;]" ..
-	"image_button[9.4,2.1;.5,.3;;minimize_terminal;--;true;false;]" ..
+	"image_button[9.65,1.98;.6,.4" .. get_button_style(player, "terminal",
+	"white").close[player:get_player_name()] .. ";true;false;]" ..
+	"image_button[9.25,1.95;.6,.45" .. get_button_style(player, "terminal",
+	"white").min[player:get_player_name()] .. ";true;false;]" ..
 	"field[3.8,5.1;6.45,1;command_input;;" .. minetest.formspec_escape(starter) .. "]" ..
 	"field_close_on_enter[command_input;false]" ..
 	"image_button[3,2.1;1.5,.5;;run;Run;true;false;]" ..
@@ -30,13 +27,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.close_terminal then
 			end_task("terminal")
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 			terminal_text = ""
 		end
 		if fields.minimize_terminal then
 			remember_notes(fields)
 			terminal_status = "minimized"
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 		end
 		if fields.terminal_task then
 			active_task = "terminal"
@@ -47,7 +46,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				terminal_status = "maximized"
 			else
 				terminal_status = "minimized"
-				desktop(player, "default", current_tasks)
+				desktop(player, files.theme[player:get_player_name()],
+				current_tasks)
 			end
 		end
 		if fields.run or fields.command_input then
@@ -100,11 +100,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end
 				if not_program == 1 then
 					for k,v in pairs(programs) do
-						if k ~= #programs then
+						if k == #programs then
+							program_string = program_string ..
+							minetest.formspec_escape(", ") .. string.lower(v)
+						elseif k ~= (#programs - 1) then
 							program_string = program_string ..
 							string.lower(v) .. minetest.formspec_escape(", ")
 						else
-							program_string = program_string ..
+							program_string = program_string .. "," ..
 							string.lower(v)
 						end
 					end
@@ -145,13 +148,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						local success = {}
 						local application_to_kill = command:sub(command:find(" ") + 1,
 						command:len())
-						for k,v in pairs(tasks.name) do
-							if application_to_kill == v then
-								end_task(application_to_kill)
-								success = 1
-							elseif application_to_kill == "-a" then
-								end_task(v)
-								success = 1
+						if application_to_kill == "-a" then
+							tasks.name = {}
+							counter = 0
+							success = 1
+							register_task("terminal")
+							current_tasks = handle_tasks("terminal")
+						else
+							for k,v in pairs(tasks.name) do
+								if v == application_to_kill then
+									end_task(application_to_kill)
+									success = 1
+								end
 							end
 						end
 						if success ~= 1 then
@@ -273,7 +281,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					terminal(player)
 					if command == "exit" then
 						end_task("terminal")
-						desktop(player, "default", current_tasks)
+						desktop(player, files.theme[player:get_player_name()],
+						current_tasks)
 						terminal_text = ""
 					end
 				end

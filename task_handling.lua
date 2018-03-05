@@ -83,7 +83,11 @@ function end_task(name)
 	if #remaining >= 1 then
 		for k,v in pairs(remaining) do
 			if v == "file_system" then
-				current_tasks = ""
+				if #remaining == 1 then
+					current_tasks = ""
+				else
+					current_tasks = current_tasks
+				end
 			else
 				if k == 1 then
 					current_tasks = ""

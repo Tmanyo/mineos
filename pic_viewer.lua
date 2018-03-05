@@ -1,9 +1,3 @@
---[[
-	Mineos Pic_View Version 1
-	Contributors:
-		Code & Textures: Tmanyo
---]]
-
 local maximize = {}
 
 pic_viewer_task = {}
@@ -60,21 +54,34 @@ function pic_viewer(player)
 		image = "label[" .. pos .. ";Click the Open button to open a picture!]"
 	end
 	if maximize ~= true then
-		desktop(player, "default_pic_viewer",
+		desktop(player, files.theme[player:get_player_name()] ..
+		"^pic_viewer_overlay.png",
 		"image_button[1.5,2.6;1,.5;;open_pics;Open;true;false;]" ..
 		"image_button[2.3,2.6;1,.5;;close_pics;Close;true;false;]" ..
-		"image_button[9.6,2.65;.5,.3;;minimize_pic_viewer;--;true;false;]" ..
-		"image_button[9.9,2.62;.5,.4;maximize_w.png;maximize_pic_viewer;;true;false;]" ..
-		"image_button[10.2,2.6;.5,.5;;close_pic_viewer;X;true;false;]" ..
+		"image_button[9.35,2.55;.6,.45" .. get_button_style(player,
+		"pic_viewer", "white").min[player:get_player_name()] ..
+		";true;false;]" ..
+		"image_button[9.75,2.55;.6,.45" .. get_button_style(player,
+		"pic_viewer", "white").max[player:get_player_name()] ..
+		";true;false;]" ..
+		"image_button[10.15,2.58;.6,.4" .. get_button_style(player,
+		"pic_viewer", "white").close[player:get_player_name()] ..
+		";true;false;]" ..
 		image ..
 		current_tasks)
 	else
 		maximized(player, "maximized_pic_viewer",
 		"image_button[0,0;1,.5;;open_pics;Open;true;false;]" ..
 		"image_button[1,0;1,.5;;close_pics;Close;true;false;]" ..
-		"image_button[9.9,.05;.5,.3;;minimize_pic_viewer;--;true;false;]" ..
-		"image_button[10.2,.02;.5,.4;window_w.png;window_pic_viewer;;true;false;]" ..
-		"image_button[10.5,-.02;.5,.5;;close_pic_viewer;X;true;false;]" ..
+		"image_button[9.65,-.11;.6,.45" .. get_button_style(player,
+		"pic_viewer", "white").min[player:get_player_name()] ..
+		";true;false;]" ..
+		"image_button[10.05,-.11;.6,.45" .. get_button_style(player,
+		"pic_viewer", "white").win[player:get_player_name()] ..
+		";true;false;]" ..
+		"image_button[10.45,-.08;.6,.4" .. get_button_style(player,
+		"pic_viewer", "white").close[player:get_player_name()] ..
+		";true;false;]" ..
 		image ..
 		current_tasks)
 	end
@@ -112,10 +119,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			image_to_display = {}
 			maximize = false
 			end_task("pic_viewer")
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 		end
 		if fields.minimize_pic_viewer then
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 			pic_viewer_status = "minimized"
 		end
 		if fields.pic_viewer_task then
@@ -125,7 +134,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				pic_viewer(player)
 				pic_viewer_status = "maximized"
 			else
-				desktop(player, "default", current_tasks)
+				desktop(player, files.theme[player:get_player_name()],
+				current_tasks)
 				pic_viewer_status = "minimized"
 			end
 		end

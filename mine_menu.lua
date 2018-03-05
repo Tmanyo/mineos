@@ -39,7 +39,8 @@ function mine_menu(player)
 		result_list = get_menu_results()
 	end
 	mine_menu_open = true
-	desktop(player, "menu",
+	desktop(player, files.theme[player:get_player_name()] ..
+	"^mine_menu_overlay.png",
 	"textlist[0,4.7;3,3;menu_results;" .. result_list .. ";;true]" ..
 	"field[.25,7.6;2.5,1;program_find;;" .. minetest.formspec_escape("") .. "]" ..
 	"button[2.3,7.5;1,.5;search_programs;Search]" ..
@@ -57,7 +58,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			else
 				mine_menu_open = false
 				exempt_clock = false
-				desktop(player, "default", current_tasks)
+				desktop(player, files.theme[player:get_player_name()],
+				current_tasks)
 				clicks = 0
 			end
 		end

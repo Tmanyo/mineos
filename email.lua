@@ -22,16 +22,16 @@ function inbox_items(player)
 	for index,email in ipairs(files.inbox[player:get_player_name()]) do
 		-- Mark emails as important.
 		if minetest.serialize(files.important_emails[player:get_player_name()]):match(email.body:sub(1,30)) then
-			emails = emails .. "#FFFF00From: " .. email.sender ..
-			" -- Subject: " .. email.subject
+			emails = emails .. minetest.formspec_escape("#FFFF00From: " .. email.sender ..
+			" -- Subject: " .. email.subject)
 			-- Mark emails as read.
 		elseif minetest.serialize(files.read_emails[player:get_player_name()]):match(email.body:sub(1,30)) then
-			emails = emails .. "From: " .. email.sender ..
-			" -- Subject: " .. email.subject
+			emails = emails .. minetest.formspec_escape("From: " .. email.sender ..
+			" -- Subject: " .. email.subject)
 			-- Mark unimportant and unread emails.
 		else
-			emails = emails .. "#FF0000From: " .. email.sender ..
-			" -- Subject: " .. email.subject
+			emails = emails .. minetest.formspec_escape("#FF0000From: " .. email.sender ..
+			" -- Subject: " .. email.subject)
 		end
 		if index ~= #files.inbox[player:get_player_name()] then
 			emails = emails .. ","
@@ -45,8 +45,8 @@ function sent_items(player)
 	local sent_mail = ""
 	local index,sent
 	for index,sent in ipairs(files.sent[player:get_player_name()]) do
-		sent_mail = sent_mail .. "To: " .. sent.recipient ..
-		" -- Subject: " .. sent.subject
+		sent_mail = sent_mail .. minetest.formspec_escape("To: " ..
+		sent.recipient .. " -- Subject: " .. sent.subject)
 		if index ~= #files.sent[player:get_player_name()] then
 			sent_mail = sent_mail .. ","
 		end
@@ -61,11 +61,12 @@ function email(player, type)
 	else
 		word = "Sent Mail"
 	end
-	desktop(player, "default_email",
-	"image_button[9.35,1.5;.5,.3;;minimize_email;" ..
-	minetest.colorize("#000000", "--") .. ";true;false;]" ..
-	"image_button[9.7,1.53;.5,.3;;close_email;" ..
-	minetest.colorize("#000000", "X") .. ";true;false;]" ..
+	desktop(player, files.theme[player:get_player_name()] ..
+	"^email_overlay.png",
+	"image_button[9.2,1.36;.6,.45" .. get_button_style(player,
+	"email", "black").min[player:get_player_name()] .. ";true;false;]" ..
+	"image_button[9.6,1.39;.6,.4" .. get_button_style(player,
+	"email", "black").close[player:get_player_name()] .. ";true;false;]" ..
 	"image_button[2.7,2;1.5,.5;;compose;" ..
 	minetest.colorize("#FF0000", "Compose") .. ";true;false;]" ..
 	"image_button[2.55,2.7;1.5,.5;;inbox_mail;" ..
@@ -89,8 +90,9 @@ function compose(player, replier, subject)
 	if not subject then
 		subject = ""
 	end
-	desktop(player, "default_email",
-	"box[2.65,1.48;7.4,4.95;black]" ..
+	desktop(player, files.theme[player:get_player_name()] ..
+	"^email_overlay.png",
+	"box[2.6,1.42;7.37,4.98;black]" ..
 	"textarea[3.2,1.75;5,.5;recipient;" ..
 	minetest.colorize("#000000", "Recipient") .. ";" ..
 	minetest.formspec_escape(replier) .. "]" ..
@@ -118,11 +120,11 @@ function read_mail(player, table, number, addon)
 	for index,email in ipairs(table) do
 		if index == number then
 			if mail_type == "inbox" then
-				sender = email.sender
+				sender = minetest.formspec_escape(email.sender)
 			else
-				sender = email.recipient
+				sender = minetest.formspec_escape(email.recipient)
 			end
-			subject = email.subject
+			subject = minetest.formspec_escape(email.subject)
 			body = email.body
 		end
 	end
@@ -139,7 +141,8 @@ function read_mail(player, table, number, addon)
 	minetest.formspec_escape(",")):gsub("\n", ",#000000")
 	extra = extra .. addon
 	-- Display formspec.
-	desktop(player, "default_email",
+	desktop(player, files.theme[player:get_player_name()] ..
+	"^email_overlay.png",
 	extra ..
 	"label[3.2,2.5;" .. minetest.colorize("#000000", "Subject: " ..
 	subject) .. "]" ..
@@ -178,11 +181,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		if fields.minimize_email then
 			email_status = "minimized"
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 		end
 		if fields.close_email then
 			end_task("email")
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 		end
 		if fields.send then
 			local subject = {}
@@ -234,7 +239,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end
 				email_status = "maximized"
 			else
-				desktop(player, "default", current_tasks)
+				desktop(player, files.theme[player:get_player_name()],
+				current_tasks)
 				email_status = "minimized"
 			end
 		end

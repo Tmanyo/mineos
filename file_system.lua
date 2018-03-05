@@ -21,16 +21,20 @@ function file_system(player, t, extra)
 	end
 	if extra then
 		extra = extra
-		bg = "fs_dialog_1"
+		bg = files.theme[player:get_player_name()] ..
+		"^file_system_dialog_overlay.png"
 	else
 		extra = ""
-		bg = "default_fs"
+		bg = files.theme[player:get_player_name()] ..
+		"^file_system_overlay.png"
 	end
 	desktop(player, bg,
 	"label[5.65,1.85;File System]" ..
-	"image_button[9.25,2;.5,.3;;close_fs;X;true;false;]" ..
-	"image_button[8.95,2;.5,.3;;minimize_fs;--;true;false;]" ..
-	"box[2.65,2.3;6.88,.5;black]" ..
+	"image_button[9.15,1.93;.6,.4" .. get_button_style(player, "file_system",
+	"white").close[player:get_player_name()] .. ";true;false;]" ..
+	"image_button[8.75,1.9;.6,.45" .. get_button_style(player, "file_system",
+	"white").min[player:get_player_name()] .. ";true;false;]" ..
+	"box[2.64,2.3;6.89,.5;black]" ..
 	"image_button[6.75,2.4;.4,.4;search.png;search_f;;true;false;]" ..
 	"textarea[3.2,2.4;4,.5;path;;" ..
 	minetest.formspec_escape(path_to_find) .. "]" ..
@@ -48,15 +52,15 @@ function file_system(player, t, extra)
 	minetest.colorize("#000000", "Pictures") .. ";true;false;]" ..
 	"image_button[2.8,5.5;1,.3;;delete;" ..
 	minetest.colorize("#FF0000", "Delete") .. ";true;false;]" ..
-	"box[3.8,2.79;.1,3.35;black]" ..
+	"box[3.8,2.79;.1,3.36;black]" ..
 	"tableoptions[background=#7AC5CD]" ..
 	"tablecolumns[" ..
 		"image,align=center,1=mn.png,2=app.png,3=unknown.png" ..
 		",4=music.png,5=picture.png;" ..
 		"text]" ..
 	"table[4,2.9;5.2,3;contents;" .. refine_returns(t) .. ";]" ..
-	current_tasks ..
-	extra)
+	extra ..
+	current_tasks)
 end
 
 file_system_status = {}
@@ -87,7 +91,11 @@ function refine_returns(t)
 			refined = "3," .. v
 		end
 	elseif t == files.Pictures then
-		refined = get_pictures():gsub(",", ",5,"):gsub("^", "5,")
+		if get_pictures() == "" then
+			refined = ""
+		else
+			refined = get_pictures():gsub(",", ",5,"):gsub("^", "5,")
+		end
 	else
 		for k,v in pairs(t) do
 			if v:match("%.mn") then
@@ -138,20 +146,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				file_system(player, files.Desktop)
 				file_system_status = "maximized"
 			else
-				desktop(player, "default", current_tasks)
+				desktop(player, files.theme[player:get_player_name()],
+				current_tasks)
 				file_system_status = "minimized"
 			end
 		end
 		if fields.search_f then
 			local search_object = {}
 			local index = {}
-			if fields.path ~= path_to_find then
+			local search_term = escape_characters(fields.path)
+			if search_term ~= path_to_find then
 				results = {}
-				if fields.path:find("\\") then
-					table_to_search = fields.path:sub(2,
-					fields.path:find("\\") - 1)
-					search_object = fields.path:sub(
-					fields.path:find("\\") + 1, fields.path:
+				if search_term:find("\\") then
+					table_to_search = search_term:sub(2,
+					search_term:find("\\") - 1)
+					search_object = search_term:sub(
+					search_term:find("\\") + 1, search_term:
 					len())
 				else
 					table_to_search = ""
@@ -225,7 +235,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end
 			elseif fields.search_fs ~= "" then
 				results = {}
-				search_object = fields.search_fs
+				search_object = escape_characters(fields.search_fs)
 				for k,v in pairs(files.Desktop) do
 					if string.lower(v) == string.lower(
 					search_object) then
@@ -269,15 +279,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			search_word = fields.search_fs
 			file_system(player, results)
 		end
-		if fields.close_fs then
+		if fields.close_file_system then
 			results = {}
 			counter = 0
 			search_word = ""
 			end_task("file_system")
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 		end
-		if fields.minimize_fs then
-			desktop(player, "default", current_tasks)
+		if fields.minimize_file_system then
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 			file_system_status = "minimized"
 		end
 		if fields.documents_f then

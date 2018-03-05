@@ -18,12 +18,16 @@ function notepad(player, perform)
 		perform = ""
 	end
 	if maximize ~= true then
-		desktop(player, "default_notepad",
+		desktop(player, files.theme[player:get_player_name()] ..
+		"^notepad_overlay.png",
 		"image_button[2.4,1.53;.75,.3;;save_notes;Save;true;false;]" ..
 		"image_button[3,1.53;.75,.3;;open_notes;Open;true;false;]" ..
-		"image_button[7.4,1.53;.5,.3;;minimize_np;--;true;false;]" ..
-		"image_button[7.7,1.5;.5,.4;maximize_w.png;maximize_np;;true;false;]" ..
-		"image_button[8,1.53;.5,.3;;close_notepad;X;true;false;]" ..
+		"image_button[7.15,1.42;.6,.45" .. get_button_style(player,
+		"notepad", "white").min[player:get_player_name()] .. ";true;false;]" ..
+		"image_button[7.55,1.42;.6,.45" .. get_button_style(player,
+		"notepad", "white").max[player:get_player_name()] .. ";true;false;]" ..
+		"image_button[7.95,1.45;.6,.4" .. get_button_style(player,
+		"notepad", "white").close[player:get_player_name()] .. ";true;false;]" ..
 		"textarea[2.7,2;6,5.3;notes;;" .. minetest.formspec_escape(text) .. "]" ..
 		current_tasks ..
 		perform)
@@ -31,9 +35,12 @@ function notepad(player, perform)
 		maximized(player, "full_notepad",
 		"image_button[0,0;.75,.3;;save_notes;Save;true;false;]" ..
 		"image_button[.6,0;.75,.3;;open_notes;Open;true;false;]" ..
-		"image_button[9.9,0;.5,.3;;minimize_np;--;true;false;]" ..
-		"image_button[10.2,-.05;.5,.4;window_w.png;window_np;;true;false;]" ..
-		"image_button[10.5,0;.5,.3;;close_notepad;X;true;false;]" ..
+		"image_button[9.7,-.1;.6,.45" .. get_button_style(player,
+		"notepad", "white").min[player:get_player_name()] .. ";true;false;]" ..
+		"image_button[10.1,-.1;.6,.45" .. get_button_style(player,
+		"notepad", "white").win[player:get_player_name()] .. ";true;false;]" ..
+		"image_button[10.5,-.07;.6,.4" .. get_button_style(player,
+		"notepad", "white").close[player:get_player_name()] .. ";true;false;]" ..
 		"textarea[.25,.5;11,8.5;notes;;" .. minetest.formspec_escape(text) .. "]" ..
 		current_tasks)
 	end
@@ -66,9 +73,28 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				if not files.Documents[player:get_player_name()] then
 					files.Documents[player:get_player_name()] = {}
 				end
-				if fields.filename ~= "" then
+				if fields.filename ~= "" and not
+				fields.filename:match(" ") then
+					local save_name = ""
+					local n = 0
+					for k,v in pairs(files.Documents[player:
+					get_player_name()]) do
+						if v:match(".+%.mn"):
+						gsub("%.mn", "") == fields.filename then
+							n = n + 1
+							fields.filename = fields.filename:
+							gsub("%(%d%)", "") .. "(" .. n .. ")"
+							if k == #files.Documents[player:
+							get_player_name()] then
+								save_name = fields.filename:
+								gsub("()", "")
+							end
+						else
+							save_name = fields.filename
+						end
+					end
 					table.insert(files.Documents[player:
-					get_player_name()], fields.filename ..
+					get_player_name()], save_name ..
 					".mn - "  .. fields.notes)
 					save_files()
 					a = 0
@@ -94,11 +120,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			maximize = false
 			text = ""
 			end_task("notepad")
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 		end
-		if fields.minimize_np then
+		if fields.minimize_notepad then
+			a = 0
 			remember_notes(fields)
-			desktop(player, "default", current_tasks)
+			desktop(player, files.theme[player:get_player_name()],
+			current_tasks)
 			notepad_status = "minimized"
 		end
 		if fields.notepad_task then
@@ -109,15 +138,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				notepad_status = "maximized"
 			else
 				text = fields.notes
-				desktop(player, "default", current_tasks)
+				desktop(player, files.theme[player:get_player_name()],
+				current_tasks)
 				notepad_status = "minimized"
 			end
 		end
-		if fields.maximize_np then
+		if fields.maximize_notepad then
+			a = 0
 			maximize = true
 			notepad(player)
 		end
-		if fields.window_np then
+		if fields.window_notepad then
 			maximize = false
 			notepad(player)
 		end
