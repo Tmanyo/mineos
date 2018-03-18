@@ -1,5 +1,5 @@
 local mail_type = {}
-local selected = {}
+local selected_email = {}
 local item = {}
 email_task = {}
 email_status = {}
@@ -13,6 +13,11 @@ minetest.register_on_joinplayer(function(player)
 		files.sent[player:get_player_name()] = {}
 	end
 	save_files()
+	email_task[player:get_player_name()] = {}
+	email_status[player:get_player_name()] = {}
+	mail_type[player:get_player_name()] = {}
+	selected_email[player:get_player_name()] = {}
+	item[player:get_player_name()] = {}
 end)
 
 -- Get incoming email.
@@ -83,7 +88,7 @@ function email(player, type)
 	"label[6.7,6;" .. minetest.colorize("#000000", word) .. "]" ..
 	"image_button[2.85,3.5;1,.5;;delete_mail;" ..
 	minetest.colorize("#FF0000", "Delete") .. ";true;false;]" ..
-	current_tasks)
+	current_tasks[player:get_player_name()])
 end
 
 function compose(player, replier, subject)
@@ -106,7 +111,7 @@ function compose(player, replier, subject)
 	minetest.colorize("#FF0000", "Cancel") .. ";true;false;]" ..
 	"image_button[8,5.9;1,.5;;send;" ..
 	minetest.colorize("#FF0000", "Send") .. ";true;false;]" ..
-	current_tasks)
+	current_tasks[player:get_player_name()])
 end
 
 -- Show sender, subject, and body.
@@ -119,7 +124,7 @@ function read_mail(player, table, number, addon)
 	local index,email
 	for index,email in ipairs(table) do
 		if index == number then
-			if mail_type == "inbox" then
+			if mail_type[player:get_player_name()] == "inbox" then
 				sender = minetest.formspec_escape(email.sender)
 			else
 				sender = minetest.formspec_escape(email.recipient)
@@ -129,7 +134,7 @@ function read_mail(player, table, number, addon)
 		end
 	end
 	-- Check for inbox or sentbox.
-	if mail_type == "inbox" then
+	if mail_type[player:get_player_name()] == "inbox" then
 		extra = "label[3.2,2;" .. minetest.colorize("#000000", "From: " ..
 		sender) .. "]"
 	else
@@ -154,23 +159,23 @@ function read_mail(player, table, number, addon)
 	"Reply") .. ";true;false;]" ..
 	"image_button[5.2,6;1,.5;;forward;" .. minetest.colorize("#FF0000",
 	"Forward") .. ";true;false;]" ..
-	current_tasks)
+	current_tasks[player:get_player_name()])
 	return body
 end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.email then
-			remember_notes(fields)
-			if not current_tasks:match("email") then
-				register_task("email")
-				handle_tasks("email")
-				current_tasks = current_tasks .. email_task
+			remember_notes(fields, player)
+			if not current_tasks[player:get_player_name()]:match("email") then
+				register_task("email", player)
+				handle_tasks("email", player)
+				current_tasks[player:get_player_name()] = current_tasks[player:get_player_name()] .. email_task[player:get_player_name()]
 			end
-			active_task = "email"
-			email_status = "minimized"
-			mail_type = "inbox"
-			change_tasks("email")
+			active_task[player:get_player_name()] = "email"
+			email_status[player:get_player_name()] = "minimized"
+			mail_type[player:get_player_name()] = "inbox"
+			change_tasks("email", player)
 			if not files.inbox[player:get_player_name()] then
 				files.inbox[player:get_player_name()] = {}
 			end
@@ -180,14 +185,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			compose(player, "")
 		end
 		if fields.minimize_email then
-			email_status = "minimized"
+			email_status[player:get_player_name()] = "minimized"
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
+			current_tasks[player:get_player_name()])
 		end
 		if fields.close_email then
-			end_task("email")
+			end_task("email", player)
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
+			current_tasks[player:get_player_name()])
 		end
 		if fields.send then
 			local subject = {}
@@ -212,51 +217,51 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				subject = subject, body = fields.body})
 				save_files()
 			end
-			mail_type = "inbox"
+			mail_type[player:get_player_name()] = "inbox"
 			email(player, inbox_items(player))
 		end
 		if fields.cancel then
-			mail_type = "inbox"
+			mail_type[player:get_player_name()] = "inbox"
 			email(player, inbox_items(player))
 		end
 		if fields.inbox_mail then
-			mail_type = "inbox"
+			mail_type[player:get_player_name()] = "inbox"
 			email(player, inbox_items(player))
 		end
 		if fields.sent then
-			mail_type = "sent"
+			mail_type[player:get_player_name()] = "sent"
 			email(player, sent_items(player))
 		end
 		if fields.email_task then
-			remember_notes(fields)
-			active_task = "email"
-			change_tasks("email")
-			if email_status == "minimized" then
-				if mail_type == "inbox" then
+			remember_notes(fields, player)
+			active_task[player:get_player_name()] = "email"
+			change_tasks("email", player)
+			if email_status[player:get_player_name()] == "minimized" then
+				if mail_type[player:get_player_name()] == "inbox" then
 					email(player, inbox_items(player))
 				else
 					email(player, sent_items(player))
 				end
-				email_status = "maximized"
+				email_status[player:get_player_name()] = "maximized"
 			else
 				desktop(player, files.theme[player:get_player_name()],
-				current_tasks)
-				email_status = "minimized"
+				current_tasks[player:get_player_name()])
+				email_status[player:get_player_name()] = "minimized"
 			end
 		end
 		if fields.back then
-			if mail_type == "inbox" then
+			if mail_type[player:get_player_name()] == "inbox" then
 				email(player, inbox_items(player))
 			else
 				email(player, sent_items(player))
 			end
 		end
 		if fields.reply then
-			if mail_type == "inbox" then
+			if mail_type[player:get_player_name()] == "inbox" then
 				local sender = {}
 				local subject = {}
 				for i,v in ipairs(files.inbox[player:get_player_name()]) do
-					if i == item then
+					if i == item[player:get_player_name()] then
 						sender = v.sender
 						subject = "Re: " .. v.subject
 					end
@@ -267,9 +272,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		end
 		if fields.forward then
-			if mail_type == "inbox" then
+			if mail_type[player:get_player_name()] == "inbox" then
 				read_mail(player, files.inbox[player:get_player_name()],
-				item, "field[6.4,2;4,1;forward_to;" ..
+				item[player:get_player_name()], "field[6.4,2;4,1;forward_to;" ..
 				minetest.colorize("#000000", "Recipients:") .. ";]" ..
 				"box[6,1.5;4,1;black]" .. "field_close_on_enter[" ..
 				"forward_to;false]")
@@ -292,7 +297,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local subject = {}
 				local body = {}
 				for i,v in ipairs(files.inbox[player:get_player_name()]) do
-					if i == item then
+					if i == item[player:get_player_name()] then
 						sender = v.sender
 						subject = v.subject
 						body = v.body
@@ -309,14 +314,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end
 				save_files()
 				read_mail(player, files.inbox[player:get_player_name()],
-				item, "")
+				item[player:get_player_name()], "")
 			end
 		end
 		local list = minetest.explode_textlist_event(fields.inbox)
 		if list.type == "DCL" then
-			item = list.index
+			item[player:get_player_name()] = list.index
 			local body = {}
-			if mail_type == "inbox" then
+			if mail_type[player:get_player_name()] == "inbox" then
 				if #files.inbox[player:get_player_name()] > 0 then
 					-- Read email.
 					body = read_mail(player,
@@ -346,83 +351,87 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		end
 		if list.type == "CHG" then
-			selected = "true"
-			item = list.index
+			selected_email[player:get_player_name()] = "true"
+			item[player:get_player_name()] = list.index
 		end
 		if fields.delete_mail then
-			if selected == "true" then
-				if mail_type == "inbox" then
+			if selected_email[player:get_player_name()] == "true" then
+				if mail_type[player:get_player_name()] == "inbox" then
 					table.remove(files.inbox[player:
-					get_player_name()], item)
+					get_player_name()], item[player:get_player_name()])
 					email(player, inbox_items(player))
 				else
 					table.remove(files.sent[player:
-					get_player_name()], item)
+					get_player_name()], item[player:get_player_name()])
 					email(player, inbox_items(player))
 				end
 			end
 			save_files()
-			selected = "false"
-			item = {}
+			selected_email[player:get_player_name()] = "false"
+			item[player:get_player_name()] = {}
 		end
 		if fields.read then
-			if selected == "true" then
-				if mail_type == "inbox" then
-					local search = {}
-					local index,emails
-					for index,emails in ipairs(
-					files.inbox[player:get_player_name()]) do
-						if index == item then
-							search = emails.body
+			if files.inbox[player:get_player_name()][item[player:get_player_name()]] then
+				if selected_email[player:get_player_name()] == "true" then
+					if mail_type[player:get_player_name()] == "inbox" then
+						local search = {}
+						local index,emails
+						for index,emails in ipairs(
+						files.inbox[player:get_player_name()]) do
+							if index == item[player:get_player_name()] then
+								search = emails.body
+							end
 						end
+						if not files.read_emails[player:
+						get_player_name()] then
+							files.read_emails[player:
+							get_player_name()] = {}
+						end
+						if not minetest.serialize(
+						files.read_emails[player:get_player_name()]):
+						match(search:sub(1,30)) then
+							table.insert(
+							files.read_emails[player:
+							get_player_name()], search:sub(1,30))
+							save_files()
+						end
+						email(player, inbox_items(player))
 					end
-					if not files.read_emails[player:
-					get_player_name()] then
-						files.read_emails[player:
-						get_player_name()] = {}
-					end
-					if not minetest.serialize(
-					files.read_emails[player:get_player_name()]):
-					match(search:sub(1,30)) then
-						table.insert(
-						files.read_emails[player:
-						get_player_name()], search:sub(1,30))
-						save_files()
-					end
-					email(player, inbox_items(player))
 				end
-				selected = "false"
-				item = {}
+				selected_email[player:get_player_name()] = "false"
+				item[player:get_player_name()] = {}
 			end
 		end
 		if fields.important then
-			if selected == "true" then
-				if mail_type == "inbox" then
-					local search = {}
-					local index,emails
-					for index,emails in ipairs(
-					files.inbox[player:get_player_name()]) do
-						if index == item then
-							search = emails.body
+			if files.inbox[player:get_player_name()][item[player:get_player_name()]] then
+				if selected_email[player:get_player_name()] == "true" then
+					if mail_type[player:get_player_name()] == "inbox" then
+						local search = {}
+						local index,emails
+						for index,emails in ipairs(
+						files.inbox[player:get_player_name()]) do
+							if index == item[player:get_player_name()] then
+								search = emails.body
+							end
 						end
-					end
-					if not files.important_emails[player:
-					get_player_name()] then
+						if not files.important_emails[player:
+						get_player_name()] then
+							files.important_emails[player:
+							get_player_name()] = {}
+						end
+						if not minetest.serialize(
 						files.important_emails[player:
-						get_player_name()] = {}
+						get_player_name()]):match(search:sub(1,30)) then
+							table.insert(
+							files.important_emails[player:
+							get_player_name()], search:sub(1,30))
+							save_files()
+						end
+						email(player, inbox_items(player))
 					end
-					if not minetest.serialize(
-					files.important_emails[player:
-					get_player_name()]):match(search:sub(1,30)) then
-						table.insert(
-						files.important_emails[player:
-						get_player_name()], search:sub(1,30))
-						save_files()
-					end
-					email(player, inbox_items(player))
 				end
-				selected = "false"
-				item = {}
+				selected_email[player:get_player_name()] = "false"
+				item[player:get_player_name()] = {}
 			end
 		end
 	end

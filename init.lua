@@ -16,11 +16,17 @@ files = {
 programs = {"Calculator","Email","File_System","Notepad","Pic_Viewer","Settings",
 "Terminal","Tmusic_Player"}
 
-version = "MineOS v0.1"
+version = "MineOS v0.21"
 lines = {}
 
 local form_closed = {}
 local field_info = {}
+exempt_clock = {}
+
+minetest.register_on_joinplayer(function(player)
+	exempt_clock[player:get_player_name()] = {}
+	form_closed[player:get_player_name()] = {}
+end)
 
 local path = minetest.get_modpath("mineos")
 
@@ -59,6 +65,13 @@ function read_files()
 end
 
 files = read_files()
+
+-- Register player specific tables and variables upon join.
+minetest.register_on_joinplayer(function(player)
+	current_tasks[player:get_player_name()] = ""
+	active_task[player:get_player_name()] = ""
+	tasks.name[player:get_player_name()] = {}
+end)
 
 --[[ My own text wrapping function because I don't like minetest.wrap_text()
 as it does not work properly.]]--
@@ -157,7 +170,7 @@ end
 -- The main formspec function.
 mine_menu_open = {}
 function desktop(player, background, action)
-	form_closed = false
+	form_closed[player:get_player_name()] = false
 	local icons_to_hide = {}
 	if mine_menu_open ~= true then
 		icons_to_hide = "image_button[.5,4.25;1,1;tmusic_player.png;tmusic_player;;true;false;]" ..
@@ -190,15 +203,14 @@ function desktop(player, background, action)
 end
 
 -- Create a timer for the clock if only the desktop is being shown.
-exempt_clock = {}
 local function timer(player, fields)
 	local tmr = 0
 	minetest.register_globalstep(function(dtime)
 		tmr = tmr + dtime
 		if tmr >= 5 then
-			if active_task == "" then
-				if form_closed ~= true then
-					if exempt_clock ~= true then
+			if active_task[player:get_player_name()] == "" then
+				if form_closed[player:get_player_name()] ~= true then
+					if exempt_clock[player:get_player_name()] ~= true then
 						desktop(player, files.theme[
 						player:get_player_name()], "")
 						tmr = 0
@@ -213,13 +225,13 @@ end
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.quit == "true" then
-			for k,v in pairs(tasks.name) do
-				end_task(v)
+			for k,v in pairs(tasks.name[player:get_player_name()]) do
+				end_task(v, player)
 			end
-			current_tasks = ""
-			terminal_text = ""
+			current_tasks[player:get_player_name()] = ""
+			terminal_text[player:get_player_name()] = ""
 			clicks = 0
-			form_closed = true
+			form_closed[player:get_player_name()] = true
 		end
 		if not fields.mine_menu then
 			mine_menu_open = false

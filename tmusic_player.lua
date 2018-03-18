@@ -1,10 +1,17 @@
-music_playing = nil
-
+music_playing = {}
 tmusic_player_task = {}
 tmusic_player_status = {}
-
 local song = {}
 local row = {}
+
+minetest.register_on_joinplayer(function(player)
+	tmusic_player_task[player:get_player_name()] = {}
+	tmusic_player_status[player:get_player_name()] = {}
+	song[player:get_player_name()] = {}
+	row[player:get_player_name()] = {}
+	music_playing[player:get_player_name()] = nil
+	music_row[player:get_player_name()] = {}
+end)
 
 minetest.mkdir(minetest.get_modpath("mineos") .. "/sounds")
 
@@ -18,8 +25,8 @@ end
 
 function tmusic_player(player)
 	local select = {}
-	if minetest.serialize(music_row):match("%d") then
-		select = music_row
+	if minetest.serialize(music_row[player:get_player_name()]):match("%d") then
+		select = music_row[player:get_player_name()]
 	else
 		select = ""
 	end
@@ -35,7 +42,7 @@ function tmusic_player(player)
 	"image_button[8.5,5.5;1.5,.5;;stop;Stop;true;false;]" ..
 	"image_button[8.5,5;1.5,.5;;loop_current;Loop Current;true;false;]" ..
 	"image_button[8.5,6;1.5,.5;;help;Help;true;false]" ..
-	current_tasks)
+	current_tasks[player:get_player_name()])
 end
 
 minetest.setting_set("individual_loop", "true")
@@ -43,61 +50,61 @@ minetest.setting_set("individual_loop", "true")
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.tmusic_player then
-			remember_notes(fields)
-			if not current_tasks:match("tmusic_player") then
-				register_task("tmusic_player")
-				handle_tasks("tmusic_player")
-				current_tasks = current_tasks .. tmusic_player_task
+			remember_notes(fields, player)
+			if not current_tasks[player:get_player_name()]:match("tmusic_player") then
+				register_task("tmusic_player", player)
+				handle_tasks("tmusic_player", player)
+				current_tasks[player:get_player_name()] = current_tasks[player:get_player_name()] .. tmusic_player_task[player:get_player_name()]
 			end
-			active_task = "tmusic_player"
-			tmusic_player_status = "minimized"
+			active_task[player:get_player_name()] = "tmusic_player"
+			tmusic_player_status[player:get_player_name()] = "minimized"
 			tmusic_player(player)
 		end
 		if fields.close_tmusic_player then
-			end_task("tmusic_player")
+			end_task("tmusic_player", player)
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
-			music_row = {}
+			current_tasks[player:get_player_name()])
+			music_row[player:get_player_name()] = {}
 		end
 		if fields.minimize_tmusic_player then
-			tmusic_player_status = "minimized"
+			tmusic_player_status[player:get_player_name()] = "minimized"
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
+			current_tasks[player:get_player_name()])
 		end
 		if fields.tmusic_player_task then
-			remember_notes(fields)
-			active_task = "tmusic_player"
-			change_tasks("tmusic_player")
-			if tmusic_player_status == "minimized" then
+			remember_notes(fields, player)
+			active_task[player:get_player_name()] = "tmusic_player"
+			change_tasks("tmusic_player", player)
+			if tmusic_player_status[player:get_player_name()] == "minimized" then
 				tmusic_player(player)
-				tmusic_player_status = "maximized"
+				tmusic_player_status[player:get_player_name()] = "maximized"
 			else
 				desktop(player, files.theme[player:get_player_name()],
-				current_tasks)
-				tmusic_player_status = "minimized"
+				current_tasks[player:get_player_name()])
+				tmusic_player_status[player:get_player_name()] = "minimized"
 			end
 		end
 		if fields.stop then
-               		if music_playing == nil then
+               		if music_playing[player:get_player_name()] == nil then
                     		return false
                		else
-				song = {}
-                    		music_playing = minetest.sound_stop(music_playing)
+				song[player:get_player_name()] = {}
+                    		music_playing[player:get_player_name()] = minetest.sound_stop(music_playing[player:get_player_name()])
                     		minetest.setting_set("individual_loop", "false")
                		end
           	end
           	if fields.loop_current then
                		if minetest.setting_getbool("individual_loop") == true then
-                    		if music_playing ~= nil then
-                         		music_playing = minetest.sound_stop(
-					music_playing)
+                    		if music_playing[player:get_player_name()] ~= nil then
+                         		music_playing[player:get_player_name()] = minetest.sound_stop(
+					music_playing[player:get_player_name()])
 				end
-                         	if music_playing == nil then
-                              		music_playing = minetest.sound_play(
-					song, {
+                         	if music_playing[player:get_player_name()] == nil then
+                              		music_playing[player:get_player_name()] = minetest.sound_play(
+					song[player:get_player_name()], {
                                    	gain = 10,
                                    	to_player =
-					minetest.get_connected_players(),
+					player:get_player_name(),
 					loop = true
                               		})
                          	end
@@ -106,17 +113,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local event = minetest.explode_textlist_event(fields.song_list)
 		if event.type == "CHG" then
 			if #files.Music >= 1 then
-				row = event.index
-				if music_playing ~= nil then
-					music_playing = minetest.sound_stop(
-					music_playing)
+				row[player:get_player_name()] = event.index
+				if music_playing[player:get_player_name()] ~= nil then
+					music_playing[player:get_player_name()] = minetest.sound_stop(
+					music_playing[player:get_player_name()])
 				end
-				if music_playing == nil then
-					song = files.Music[event.index]:gsub(
+				if music_playing[player:get_player_name()] == nil then
+					song[player:get_player_name()] = files.Music[event.index]:gsub(
 					"%.ogg", "")
-					music_playing = minetest.sound_play(song, {
+					music_playing[player:get_player_name()] = minetest.sound_play(song[player:get_player_name()], {
 						gain = 10,
-						to_player = minetest.get_connected_players()
+						to_player = player:get_player_name()
 					})
 				end
 			end
@@ -147,7 +154,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			help_text_4 .. ";;true]" ..
 			"image[3,6;3,.75;tmusic_logo.png]" ..
 			"image_button[7,6;1.5,.5;;music_back;Back;true;false;]" ..
-			current_tasks)
+			current_tasks[player:get_player_name()])
 		end
 		if fields.music_back then
 			tmusic_player(player)

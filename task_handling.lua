@@ -1,35 +1,35 @@
 -----
 -- Functions used to handle tasks on the task bar and window status'.
 -----
-current_tasks = ""
-active_task = ""
+current_tasks = {}
+active_task = {}
 tasks = {
 	name = {}
 }
 
 -- Function used to register a task.
-function register_task(name)
-	table.insert(tasks.name, name)
+function register_task(name, player)
+	table.insert(tasks.name[player:get_player_name()], name)
 end
 
 -- Function used to change between apps and save notepad text.
-function remember_notes(fields)
-	for k,v in pairs(tasks.name) do
+function remember_notes(fields, player)
+	for k,v in pairs(tasks.name[player:get_player_name()]) do
 		if v:match("notepad") then
 			if fields.notes ~= nil then
-				text = fields.notes
+				text[player:get_player_name()] = fields.notes
 			end
 		end
 	end
 end
 
 -- Function that decides app location on the task bar.
-function handle_tasks(name)
+function handle_tasks(name, player)
 	local task_number = {}
 	local task_location = {}
 	local task_icon = {}
 	local fs = 0
-	for k,v in pairs(tasks.name) do
+	for k,v in pairs(tasks.name[player:get_player_name()]) do
 		if v:match("file_system") then
 			fs = 1
 		end
@@ -46,59 +46,61 @@ function handle_tasks(name)
 		return false
 	else
 		task_location = positions[task_number]
-		_G[name .. "_task"] = "image_button[" .. task_location ..
+		_G[name .. "_task"][player:get_player_name()] = "image_button[" .. task_location ..
 		",8.25;.75,.75;" .. name .. ".png;" .. name .. "_task;" ..
 		";true;false;]"
-		task_icon = _G[name .. "_task"]
+		task_icon = _G[name .. "_task"][player:get_player_name()]
 	end
 	return task_icon
 end
 
 -- Function that makes sure all apps that aren't being used are minimized.
-function change_tasks(program)
-	if #tasks.name > 1 then
-		for k,v in pairs(tasks.name) do
+function change_tasks(program, player)
+	if #tasks.name[player:get_player_name()] > 1 then
+		for k,v in pairs(tasks.name[player:get_player_name()]) do
 			if v ~= program then
-				_G[v .. "_status"] = "minimized"
+				_G[v .. "_status"][player:get_player_name()] = "minimized"
 			end
 		end
 	end
 end
 
 -- Function used to end a task properly so that it doesn't create other issues.
-function end_task(name)
+function end_task(name, player)
 	local task_number = {}
 	local remaining = {}
-	for k,v in pairs(tasks.name) do
+	for k,v in pairs(tasks.name[player:get_player_name()]) do
 		if v == name then
 			if name == "file_system" then
-				counter = 0
+				counter[player:get_player_name()] = 0
 			end
 			task_number = k
 		else
 			table.insert(remaining, v)
 		end
 	end
-	table.remove(tasks.name, task_number)
+	table.remove(tasks.name[player:get_player_name()], task_number)
 	if #remaining >= 1 then
 		for k,v in pairs(remaining) do
 			if v == "file_system" then
 				if #remaining == 1 then
-					current_tasks = ""
+					current_tasks[player:get_player_name()] = ""
 				else
-					current_tasks = current_tasks
+					current_tasks[player:get_player_name()] = current_tasks[
+					player:get_player_name()]
 				end
 			else
 				if k == 1 then
-					current_tasks = ""
+					current_tasks[player:get_player_name()] = ""
 				end
-				current_tasks = current_tasks ..
-				handle_tasks(v)
+				current_tasks[player:get_player_name()] = current_tasks[
+				player:get_player_name()] ..
+				handle_tasks(v, player)
 			end
 			remaining = {}
 		end
 	else
-		active_task = ""
-		current_tasks = ""
+		active_task[player:get_player_name()] = ""
+		current_tasks[player:get_player_name()] = ""
 	end
 end

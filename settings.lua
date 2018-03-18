@@ -1,7 +1,7 @@
 local themes = ""
 local theme_table = {}
-local preview_theme = ""
-local selected = ""
+local preview_theme = {}
+local selected_theme = {}
 
 settings_task = {}
 settings_status = {}
@@ -11,6 +11,10 @@ minetest.register_on_joinplayer(function(player)
 		files.button_theme[player:get_player_name()] = "default"
 		save_files()
 	end
+	settings_task[player:get_player_name()] = {}
+	settings_status[player:get_player_name()] = {}
+	preview_theme[player:get_player_name()] = ""
+	selected_theme[player:get_player_name()] = ""
 end)
 
 function get_button_style(player, app, color)
@@ -82,17 +86,17 @@ function settings(player)
 			current_theme = k
 		end
 	end
-	if preview_theme == "" then
-		preview_theme = files.theme[player:get_player_name()]
+	if preview_theme[player:get_player_name()] == "" then
+		preview_theme[player:get_player_name()] = files.theme[player:get_player_name()]
 	end
-	if selected == "" then
-		selected = current_theme
+	if selected_theme[player:get_player_name()] == "" then
+		selected_theme[player:get_player_name()] = current_theme
 	end
 	desktop(player, files.theme[player:get_player_name()] ..
 	"^settings_overlay.png",
 	"label[3.5,1.75;" .. minetest.colorize("#000000", "Themes:") .. "]" ..
 	"textlist[3.5,2.25;3,4;themes;" .. get_themes() .. ";" ..
-	selected .. ";false]" ..
+	selected_theme[player:get_player_name()] .. ";false]" ..
 	"image_button[9.22,1.62;.6,.4" .. get_button_style(player,
 	"settings", "black").close[player:get_player_name()] .. ";true;false;]" ..
 	"image_button[8.82,1.59;.6,.45" .. get_button_style(player,
@@ -110,33 +114,34 @@ function settings(player)
 	"tooltip[win7_min;Modern]" ..
 	"image_button[3.6,6.75;1,.5;;apply_theme;" .. minetest.colorize(
 	"#FF0000", "Apply") .. ";true;false;]" ..
-	"image[6.8,2;3,2.75;" .. preview_theme .. "]" ..
-	current_tasks)
+	"image[6.8,2;3,2.75;" .. preview_theme[player:get_player_name()] .. "]" ..
+	current_tasks[player:get_player_name()])
 end
 
 local button_type = ""
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.settings then
-			if not current_tasks:match("settings") then
-				register_task("settings")
-				handle_tasks("settings")
-				current_tasks = current_tasks .. settings_task
+			if not current_tasks[player:get_player_name()]:match("settings") then
+				register_task("settings", player)
+				handle_tasks("settings", player)
+				current_tasks[player:get_player_name()] = current_tasks[player:get_player_name()] .. settings_task[player:get_player_name()]
 			end
-			active_task = "settings"
-			settings_status = "minimized"
-			change_tasks("settings")
+			remember_notes(fields, player)
+			active_task[player:get_player_name()] = "settings"
+			settings_status[player:get_player_name()] = "minimized"
+			change_tasks("settings", player)
 			settings(player)
 		end
 		local event = minetest.explode_textlist_event(fields.themes)
 		if event.type == "CHG" then
-			preview_theme = theme_table[event.index] .. "_theme.png"
-			selected = event.index
+			preview_theme[player:get_player_name()] = theme_table[event.index] .. "_theme.png"
+			selected_theme[player:get_player_name()] = event.index
 			settings(player)
 		end
 		if fields.apply_theme then
-			if preview_theme ~= "" then
-				files.theme[player:get_player_name()] = preview_theme
+			if preview_theme[player:get_player_name()] ~= "" then
+				files.theme[player:get_player_name()] = preview_theme[player:get_player_name()]
 			end
 			if button_type ~= "" then
 				files.button_theme[player:get_player_name()] = button_type
@@ -146,32 +151,30 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		if fields.default_buttons then
 			button_type = "default"
-			--files.button_theme[player:get_player_name()] = "default"
 		end
 		if fields.win7_x or fields.win7_min or fields.win7_max then
 			button_type = "win7"
-			--files.button_theme[player:get_player_name()] = "win7"
 		end
 		if fields.close_settings then
-			end_task("settings")
+			end_task("settings", player)
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
+			current_tasks[player:get_player_name()])
 		end
 		if fields.minimize_settings then
-			settings_status = "minimized"
+			settings_status[player:get_player_name()] = "minimized"
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
+			current_tasks[player:get_player_name()])
 		end
 		if fields.settings_task then
-			active_task = "settings"
-			change_tasks("settings")
-			if settings_status == "minimized" then
+			active_task[player:get_player_name()] = "settings"
+			change_tasks("settings", player)
+			if settings_status[player:get_player_name()] == "minimized" then
 				settings(player)
-				settings_status = "maximized"
+				settings_status[player:get_player_name()] = "maximized"
 			else
 				desktop(player, files.theme[player:get_player_name()],
-				current_tasks)
-				settings_status = "minimized"
+				current_tasks[player:get_player_name()])
+				settings_status[player:get_player_name()] = "minimized"
 			end
 		end
 	end

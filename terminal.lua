@@ -1,8 +1,14 @@
 terminal_status = {}
 terminal_task = {}
-
 command = {}
-terminal_text = ""
+terminal_text = {}
+
+minetest.register_on_joinplayer(function(player)
+	terminal_status[player:get_player_name()] = {}
+	terminal_task[player:get_player_name()] = {}
+	terminal_text[player:get_player_name()] = ""
+	command[player:get_player_name()] = {}
+end)
 
 function terminal(player)
 	local starter = {}
@@ -18,36 +24,41 @@ function terminal(player)
 	"field_close_on_enter[command_input;false]" ..
 	"image_button[3,2.1;1.5,.5;;run;Run;true;false;]" ..
 	"textlist[3.5,2.5;6.25,2.5;command_output;" .. minetest.formspec_escape(
-	"#FF0000".. starter) .. wrap_textlist_text(terminal_text, 85) .. ";" ..
+	"#FF0000".. starter) .. wrap_textlist_text(terminal_text[player:get_player_name()], 85) .. ";" ..
 	#lines .. ";false]" ..
-	current_tasks)
+	current_tasks[player:get_player_name()])
+end
+
+function terminal_return(player, output)
+	terminal_text[player:get_player_name()] = terminal_text[player:get_player_name()] ..
+	command[player:get_player_name()] .. ", ," .. output
 end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.close_terminal then
-			end_task("terminal")
+			end_task("terminal", player)
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
-			terminal_text = ""
+			current_tasks[player:get_player_name()])
+			terminal_text[player:get_player_name()] = ""
 		end
 		if fields.minimize_terminal then
-			remember_notes(fields)
-			terminal_status = "minimized"
+			remember_notes(fields, player)
+			terminal_status[player:get_player_name()] = "minimized"
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
+			current_tasks[player:get_player_name()])
 		end
 		if fields.terminal_task then
-			active_task = "terminal"
-			handle_tasks("terminal")
-			change_tasks("terminal")
-			if terminal_status == "minimized" then
+			active_task[player:get_player_name()] = "terminal"
+			handle_tasks("terminal", player)
+			change_tasks("terminal", player)
+			if terminal_status[player:get_player_name()] == "minimized" then
 				terminal(player)
-				terminal_status = "maximized"
+				terminal_status[player:get_player_name()] = "maximized"
 			else
-				terminal_status = "minimized"
+				terminal_status[player:get_player_name()] = "minimized"
 				desktop(player, files.theme[player:get_player_name()],
-				current_tasks)
+				current_tasks[player:get_player_name()])
 			end
 		end
 		if fields.run or fields.command_input then
@@ -62,36 +73,35 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local output = ""
 			if fields.command_input:match(player:get_player_name() ..
 			">.+") then
-				command = fields.command_input:gsub(player:get_player_name() ..
+				command[player:get_player_name()] = fields.command_input:gsub(player:get_player_name() ..
 				">", "")
 			else
-				command = ""
+				command[player:get_player_name()] = ""
 			end
-			if command ~= "" then
+			if command[player:get_player_name()] ~= "" then
 				for k,v in pairs(programs) do
-					if command == string.lower(v) then
-						register_task(command)
-						if command ~= "file_system" then
-							current_tasks = current_tasks ..
-							handle_tasks(command)
+					if command[player:get_player_name()] == string.lower(v) then
+						register_task(command[player:get_player_name()], player)
+						if command[player:get_player_name()] ~= "file_system" then
+							current_tasks[player:get_player_name()] = current_tasks[player:get_player_name()] ..
+							handle_tasks(command[player:get_player_name()], player)
 						end
-						active_task = command
-						--change_tasks("terminal")
-						_G[command .. "_status"] =
+						active_task[player:get_player_name()] = command[player:get_player_name()]
+						--change_tasks("terminal", player)
+						_G[command[player:get_player_name()] .. "_status"][player:get_player_name()] =
 						"minimized"
-						terminal_status = "minimized"
-						remember_notes(fields)
-						if command == "email" then
+						terminal_status[player:get_player_name()] = "minimized"
+						remember_notes(fields, player)
+						if command[player:get_player_name()] == "email" then
 							email(player, inbox_items(player))
-						elseif command == "files_system" then
+						elseif command[player:get_player_name()] == "files_system" then
 							file_system(player, files.Desktop)
 						else
-							_G[command](player)
+							_G[command[player:get_player_name()]](player)
 						end
 						is_program = 1
-						terminal_text = terminal_text .. command ..
-						", ,Application launched successfully., ," ..
-						"#FF0000" .. player:get_player_name() .. ">"
+						terminal_return(player, "Application launched successfully., ," ..
+						"#FF0000" .. player:get_player_name() .. ">")
 					end
 				end
 				if is_program ~= 1 then
@@ -111,9 +121,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 							string.lower(v)
 						end
 					end
-					if command == "commands -a" then
-						terminal_text = terminal_text .. command ..
-						", ,Application: <application_name>," ..
+					if command[player:get_player_name()] == "commands -a" then
+						terminal_return(player, "Application: <application_name>," ..
 						"Exit: exit,Application List: " ..
 						program_string .. ",Player " ..
 						"Information: info <name>" ..
@@ -124,40 +133,42 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						",Tasks: tasks" ..
 						",Properties: properties <application_name>," ..
 						",Properties All: properties -a" ..
-						",MineOS Version: version"
-					elseif command == "shutdown" then
-						for k,v in pairs(tasks.name) do
-							end_task(v)
+						",MineOS Version: version" ..
+						",Add Picture: picture -n <name>" ..
+						",Delete Picture: picture -d <name>")
+					elseif command[player:get_player_name()] == "shutdown" then
+						for k,v in pairs(tasks.name[player:get_player_name()]) do
+							end_task(v, player)
 						end
 						minetest.close_formspec(player:get_player_name(), "mineos:desktop")
-						current_tasks = ""
-						terminal_text = ""
+						current_tasks[player:get_player_name()] = ""
+						terminal_text[player:get_player_name()] = ""
 						clicks = 0
-					elseif command == "restart" then
-						for k,v in pairs(tasks.name) do
-							end_task(v)
+					elseif command[player:get_player_name()] == "restart" then
+						for k,v in pairs(tasks.name[player:get_player_name()]) do
+							end_task(v, player)
 						end
 						minetest.close_formspec(player:get_player_name(), "mineos:desktop")
-						current_tasks = ""
+						current_tasks[player:get_player_name()] = ""
 						clicks = 0
 						minetest.after(3, function()
-							desktop(player, "default", current_tasks)
+							desktop(player, "default", current_tasks[player:get_player_name()])
 						end)
-						terminal_text = ""
-					elseif command:match("^kill .+") then
+						terminal_text[player:get_player_name()] = ""
+					elseif command[player:get_player_name()]:match("^kill .+") then
 						local success = {}
-						local application_to_kill = command:sub(command:find(" ") + 1,
-						command:len())
+						local application_to_kill = command[player:get_player_name()]:sub(command[player:get_player_name()]:find(" ") + 1,
+						command[player:get_player_name()]:len())
 						if application_to_kill == "-a" then
-							tasks.name = {}
-							counter = 0
+							tasks.name[player:get_player_name()] = {}
+							counter[player:get_player_name()] = 0
 							success = 1
-							register_task("terminal")
-							current_tasks = handle_tasks("terminal")
+							register_task("terminal", player)
+							current_tasks[player:get_player_name()] = handle_tasks("terminal", player)
 						else
-							for k,v in pairs(tasks.name) do
+							for k,v in pairs(tasks.name[player:get_player_name()]) do
 								if v == application_to_kill then
-									end_task(application_to_kill)
+									end_task(application_to_kill, player)
 									success = 1
 								end
 							end
@@ -175,29 +186,27 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 							application_to_kill:sub(1,1):upper())
 						end
 						if message == "Task not found." then
-							terminal_text = terminal_text .. command ..
-							", ," .. message
+							terminal_return(player, message)
 						else
-							terminal_text = terminal_text .. command ..
-							", ," .. message .. " successfully stopped."
+							terminal_return(player, message ..
+							" successfully stopped.")
 						end
 						success = {}
-					elseif command == "tasks" then
-						terminal_text = terminal_text .. command ..
-						", ,Current Tasks:"
-						for k,v in pairs(tasks.name) do
-							if k ~= #tasks.name then
-								terminal_text = terminal_text ..
+					elseif command[player:get_player_name()] == "tasks" then
+						terminal_return(player, "Current Tasks:")
+						for k,v in pairs(tasks.name[player:get_player_name()]) do
+							if k ~= #tasks.name[player:get_player_name()] then
+								terminal_text[player:get_player_name()] = terminal_text[player:get_player_name()] ..
 								"," .. v .. ","
 							else
-								terminal_text = terminal_text ..
+								terminal_text[player:get_player_name()] = terminal_text[player:get_player_name()] ..
 								"," .. v
 							end
 						end
-					elseif command:match("^properties .+") then
+					elseif command[player:get_player_name()]:match("^properties .+") then
 						local file = {}
 						local application = {}
-						application = command:sub(12, command:len())
+						application = command[player:get_player_name()]:sub(12, command[player:get_player_name()]:len())
 						if application ~= "-a" then
 							for k,v in pairs(programs) do
 								if string.lower(v) == application then
@@ -206,13 +215,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 								end
 							end
 							if type(file) ~= "table" then
-								terminal_text = terminal_text .. command ..
-								", ," .. application .. ".lua size: " ..
-								file:seek("end") * (10^-3) .. " KB"
+								terminal_return(player, application .. ".lua size: " ..
+								file:seek("end") * (10^-3) .. " KB")
 								file:close()
 							else
-								terminal_text = terminal_text .. command ..
-								", ," .. application .. " could not be found."
+								terminal_return(player, application .. " could not be found.")
 							end
 						else
 							local total = 0
@@ -225,71 +232,77 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 								file:close()
 								file = {}
 							end
-							terminal_text = terminal_text .. command ..
-							", ,Mineos size (excluding textures and sounds): " ..
-							total .. " KB"
+							terminal_return(player, "Mineos size (excluding textures and sounds): " ..
+							total .. " KB")
 						end
-					elseif command == "version" then
-						terminal_text = terminal_text ..
-						command .. ", ," .. version
-					elseif command:match("info .+") then
-						local player_name = command:sub(
-						command:find(" ",5) + 1, command:len())
+					elseif command[player:get_player_name()] == "version" then
+						terminal_return(player, version)
+					elseif command[player:get_player_name()]:match("picture %-n .+") then
+						if not command[player:get_player_name()]:match("%.png") then
+							terminal_return(player, "Invalid image name.")
+						else
+							table.insert(files.Pictures, command[player:get_player_name()]:
+							sub(12, command[player:get_player_name()]:len()))
+							terminal_return(player, "Picture successfully registered.")
+							save_files()
+						end
+					elseif command[player:get_player_name()]:match("picture %-d .+") then
+						local pic_index = {}
+						for k,v in pairs(files.Pictures) do
+							if v == command[player:get_player_name()]:
+							sub(12, command[player:get_player_name()]:len()) then
+								pic_index = k
+							end
+						end
+						if type(pic_index) ~= "table" then
+							table.remove(files.Pictures, pic_index)
+							save_files()
+							terminal_return(player, "Picture successfully deleted.")
+						else
+							terminal_return(player, "Picture does not exist.")
+						end
+					elseif command[player:get_player_name()]:match("info .+") then
+						local player_name = command[player:get_player_name()]:sub(
+						command[player:get_player_name()]:find(" ",5) + 1, command[player:get_player_name()]:len())
 						if minetest.player_exists(player_name) == true then
 							if player_name == player:get_player_name() then
-								terminal_text = terminal_text .. command ..
-								", ,Uptime: " .. minetest.get_player_information(
+								terminal_return(player, "Uptime: " .. minetest.get_player_information(
 								player_name).connection_uptime .. ",IP " ..
 								"Address: " .. minetest.get_player_information(
-								player_name).address
+								player_name).address)
 							else
 								if minetest.get_connected_players()[player_name] then
-									terminal_text = terminal_text .. command ..
-									", ,Uptime: " .. minetest.get_player_information(
+									terminal_return(player, "Uptime: " .. minetest.get_player_information(
 									player_name).connection_uptime .. ",IP " ..
 									"Address: " .. minetest.get_player_information(
-									player_name).address
+									player_name).address)
 								else
-									terminal_text = terminal_text .. command ..
-									", ,Player exists" ..
+									terminal_return(player, "Player exists" ..
 									minetest.formspec_escape(",") .. " but" ..
-									" is not currently online."
+									" is not currently online.")
 									terminal(player)
 								end
 							end
 						else
-							terminal_text = terminal_text .. command ..
-							", ,Player does not exist."
+							terminal_return(player, "Player does not exist.")
 							terminal(player)
 						end
 					else
-						terminal_text = terminal_text .. command .. ", ,Unknown Command"
+						terminal_return(player, "Unknown Command")
 					end
-					if terminal_text:match("Password for sudo:, ," .. player:get_player_name() ..
-					">$") then
-						if minetest.check_player_privs(
-						player:get_player_name()).server == true then
-							terminal_text = terminal_text .. command ..
-							", ,Uptime: " .. minetest.get_player_information(
-							player_name).connection_uptime .. ",IP " ..
-							"Address: " .. minetest.get_player_information(
-							player_name).address
-						end
-					end
-					terminal_text = terminal_text ..
-					", ,#FF0000" .. player:get_player_name() .. ">"
+					terminal_text[player:get_player_name()] = terminal_text[player:get_player_name()] ..
+					", ,#FF0000" .. player:get_player_name() .. ">" 
 					terminal(player)
-					if command == "exit" then
-						end_task("terminal")
+					if command[player:get_player_name()] == "exit" then
+						end_task("terminal", player)
 						desktop(player, files.theme[player:get_player_name()],
-						current_tasks)
-						terminal_text = ""
+						current_tasks[player:get_player_name()])
+						terminal_text[player:get_player_name()] = ""
 					end
 				end
 			else
-				terminal_text = terminal_text ..
-				", ,Unknown Command, ,#FF0000" .. player:get_player_name() ..
-				">"
+				terminal_return(player, "Unknown Command, ,#FF0000" ..
+				player:get_player_name() .. ">")
 				terminal(player)
 			end
 		end

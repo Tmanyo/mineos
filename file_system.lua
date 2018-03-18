@@ -1,23 +1,38 @@
 results = {}
 music_row = {}
+counter = {}
+file_system_status = {}
 local path_to_find = {}
 local search_word = {}
+local item = {}
+local selected = {}
+
+minetest.register_on_joinplayer(function(player)
+	results[player:get_player_name()] = {}
+	music_row[player:get_player_name()] = {}
+	path_to_find[player:get_player_name()] = {}
+	search_word[player:get_player_name()] = {}
+	file_system_status[player:get_player_name()] = {}
+	counter[player:get_player_name()] = 0
+	item[player:get_player_name()] = {}
+	selected[player:get_player_name()] = {}
+end)
 
 function file_system(player, t, extra)
 	local bg = {}
 	if t == files.Documents[player:get_player_name()] then
-		path_to_find = ">Documents"
+		path_to_find[player:get_player_name()] = ">Documents"
 	elseif t == files.Desktop then
-		path_to_find = ">Desktop"
+		path_to_find[player:get_player_name()] = ">Desktop"
 	elseif t == files.Music then
-		path_to_find = ">Music"
+		path_to_find[player:get_player_name()] = ">Music"
 	elseif t == files.Downloads then
-		path_to_find = ">Downloads"
+		path_to_find[player:get_player_name()] = ">Downloads"
 	elseif t == files.Pictures then
-		path_to_find = ">Pictures"
+		path_to_find[player:get_player_name()] = ">Pictures"
 	end
-	if type(search_word) == "table" then
-		search_word = ""
+	if type(search_word[player:get_player_name()]) == "table" then
+		search_word[player:get_player_name()] = ""
 	end
 	if extra then
 		extra = extra
@@ -37,9 +52,9 @@ function file_system(player, t, extra)
 	"box[2.64,2.3;6.89,.5;black]" ..
 	"image_button[6.75,2.4;.4,.4;search.png;search_f;;true;false;]" ..
 	"textarea[3.2,2.4;4,.5;path;;" ..
-	minetest.formspec_escape(path_to_find) .. "]" ..
+	minetest.formspec_escape(path_to_find[player:get_player_name()]) .. "]" ..
 	"textarea[7.3,2.4;2.5,.5;search_fs;;" ..
-	minetest.formspec_escape(search_word) .. "]" ..
+	minetest.formspec_escape(search_word[player:get_player_name()]) .. "]" ..
 	"image_button[2.75,3;1,.3;;desktop_f;" ..
 	minetest.colorize("#000000", "Desktop") .. ";true;false;]" ..
 	"image_button[2.8,3.3;1,.3;;documents_f;" ..
@@ -60,10 +75,8 @@ function file_system(player, t, extra)
 		"text]" ..
 	"table[4,2.9;5.2,3;contents;" .. refine_returns(t) .. ";]" ..
 	extra ..
-	current_tasks)
+	current_tasks[player:get_player_name()])
 end
-
-file_system_status = {}
 
 -- Show files without serialized table junk.
 function refine_returns(t)
@@ -124,39 +137,36 @@ function refine_returns(t)
 	return refined
 end
 
-counter = 0
-local selected = {}
-local item = {}
 local table_to_search = {}
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mineos:desktop" then
 		if fields.file_system then
 			for k,v in pairs(files.Desktop) do
-				table.insert(results, v)
+				table.insert(results[player:get_player_name()], v)
 			end
-			remember_notes(fields)
-			counter = counter + 1
-			if counter == 1 then
-				register_task("file_system")
-				file_system_status = "minimized"
+			remember_notes(fields, player)
+			counter[player:get_player_name()] = counter[player:get_player_name()] + 1
+			if counter[player:get_player_name()] == 1 then
+				register_task("file_system", player)
+				file_system_status[player:get_player_name()] = "minimized"
 			end
-			active_task = "file_system"
-			change_tasks("file_system")
-			if file_system_status == "minimized" then
+			active_task[player:get_player_name()] = "file_system"
+			change_tasks("file_system", player)
+			if file_system_status[player:get_player_name()] == "minimized" then
 				file_system(player, files.Desktop)
-				file_system_status = "maximized"
+				file_system_status[player:get_player_name()] = "maximized"
 			else
 				desktop(player, files.theme[player:get_player_name()],
-				current_tasks)
-				file_system_status = "minimized"
+				current_tasks[player:get_player_name()])
+				file_system_status[player:get_player_name()] = "minimized"
 			end
 		end
 		if fields.search_f then
 			local search_object = {}
 			local index = {}
 			local search_term = escape_characters(fields.path)
-			if search_term ~= path_to_find then
-				results = {}
+			if search_term ~= path_to_find[player:get_player_name()] then
+				results[player:get_player_name()] = {}
 				if search_term:find("\\") then
 					table_to_search = search_term:sub(2,
 					search_term:find("\\") - 1)
@@ -202,12 +212,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 								table_to_search ==
 								"Music" then
 									table.insert(
-									results,
+									results[player:get_player_name()],
 									t[k])
 								elseif table_to_search ==
 								"Documents" then
 									table.insert(
-									results,
+									results[player:get_player_name()],
 									t[player:
 									get_player_name()]
 									[k])
@@ -220,11 +230,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 								table_to_search ==
 								"Music" then
 									table.insert(
-									results,t[k])
+									results[player:get_player_name()],t[k])
 								elseif table_to_search ==
 								"Documents" then
 									table.insert(
-									results,
+									results[player:get_player_name()],
 									t[player:
 									get_player_name()]
 									[k])
@@ -234,186 +244,182 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					end
 				end
 			elseif fields.search_fs ~= "" then
-				results = {}
+				results[player:get_player_name()] = {}
 				search_object = escape_characters(fields.search_fs)
 				for k,v in pairs(files.Desktop) do
 					if string.lower(v) == string.lower(
 					search_object) then
-						table.insert(results, v)
+						table.insert(results[player:get_player_name()], v)
 					elseif string.lower(v):match("^" ..
 					string.lower(search_object):sub(1,3))
 					then
-						table.insert(results, v)
+						table.insert(results[player:get_player_name()], v)
 					end
 				end
 				for k,v in pairs(files.Documents[player:
 				get_player_name()]) do
 					if string.lower(v) == string.lower(
 					search_object) then
-						table.insert(results, v)
+						table.insert(results[player:get_player_name()], v)
 					elseif string.lower(v):match("^" ..
 					string.lower(search_object):sub(1,3))
 					then
-						table.insert(results, v)
+						table.insert(results[player:get_player_name()], v)
 					end
 				end
 				get_music()
 				for k,v in pairs(files.Music) do
 					if v == string.lower(search_object) then
-						table.insert(results, v)
+						table.insert(results[player:get_player_name()], v)
 					elseif v:gsub("mineos_", ""):match("^" ..
 					string.lower(search_object):sub(1,3)) then
-						table.insert(results, v)
+						table.insert(results[player:get_player_name()], v)
 					end
 				end
 				for k,v in pairs(files.Pictures) do
 					if v == string.lower(search_object) then
-						table.insert(results, v)
+						table.insert(results[player:get_player_name()], v)
 					elseif v:match("^" .. string.lower(
 					search_object):sub(1,3)) then
-						table.insert(results, v)
+						table.insert(results[player:get_player_name()], v)
 					end
 				end
 			end
-			path_to_find = fields.path
-			search_word = fields.search_fs
-			file_system(player, results)
+			path_to_find[player:get_player_name()] = fields.path
+			search_word[player:get_player_name()] = fields.search_fs
+			file_system(player, results[player:get_player_name()])
 		end
 		if fields.close_file_system then
-			results = {}
-			counter = 0
-			search_word = ""
-			end_task("file_system")
+			results[player:get_player_name()] = {}
+			counter[player:get_player_name()] = 0
+			search_word[player:get_player_name()] = ""
+			end_task("file_system", player)
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
+			current_tasks[player:get_player_name()])
 		end
 		if fields.minimize_file_system then
 			desktop(player, files.theme[player:get_player_name()],
-			current_tasks)
-			file_system_status = "minimized"
+			current_tasks[player:get_player_name()])
+			file_system_status[player:get_player_name()] = "minimized"
 		end
 		if fields.documents_f then
 			if not files.Documents[player:get_player_name()] then
 				files.Documents[player:get_player_name()] = {}
 			end
-			results = {}
+			results[player:get_player_name()] = {}
 			file_system(player, files.Documents[player:
 			get_player_name()])
 			for k,v in pairs(files.Documents[player:
 			get_player_name()]) do
-				table.insert(results, v)
+				table.insert(results[player:get_player_name()], v)
 			end
 		end
 		if fields.desktop_f then
-			results = {}
+			results[player:get_player_name()] = {}
 			file_system(player, files.Desktop)
 			for k,v in pairs(files.Desktop) do
-				table.insert(results, v)
+				table.insert(results[player:get_player_name()], v)
 			end
 		end
 		if fields.downloads_f then
-			results = {}
+			results[player:get_player_name()] = {}
 			file_system(player, files.Downloads)
 			for k,v in pairs(files.Downloads) do
-				table.insert(results, v)
+				table.insert(results[player:get_player_name()], v)
 			end
 		end
 		if fields.pictures_f then
-			results = {}
+			results[player:get_player_name()] = {}
 			get_pictures()
 			file_system(player, files.Pictures)
 			for k,v in pairs(files.Pictures) do
-				table.insert(results, v)
+				table.insert(results[player:get_player_name()], v)
 			end
 		end
 		if fields.music_f then
-			results = {}
+			results[player:get_player_name()] = {}
 			get_music()
 			file_system(player, files.Music)
 			for k,v in pairs(files.Music) do
-				table.insert(results, v)
+				table.insert(results[player:get_player_name()], v)
 			end
 		end
 		local event = minetest.explode_table_event(fields.contents)
 		if event.type == "DCL" then
 			local application = {}
 			local file = {}
-			if results[event.row] ~= nil then
-				if results[event.row]:match("%.ogg") then
-					music_row = event.row
-					for k,v in pairs(results) do
+			if results[player:get_player_name()][event.row] ~= nil then
+				if results[player:get_player_name()][event.row]:match("%.ogg") then
+					music_row[player:get_player_name()] = event.row
+					for k,v in pairs(results[player:get_player_name()]) do
 						table.insert(file, v)
 					end
 					if file[event.row] ~= nil then
-						register_task("tmusic_player")
-						handle_tasks("tmusic_player")
-						current_tasks = current_tasks ..
-						tmusic_player_task
-						active_task = "tmusic_player"
-						tmusic_player_status = "minimized"
-						search_word = ""
-						results = {}
-						end_task("file_system")
-						counter = 0
+						register_task("tmusic_player", player)
+						handle_tasks("tmusic_player", player)
+						current_tasks[player:get_player_name()] = current_tasks[player:get_player_name()] ..
+						tmusic_player_task[player:get_player_name()]
+						active_task[player:get_player_name()] = "tmusic_player"
+						tmusic_player_status[player:get_player_name()] = "minimized"
+						search_word[player:get_player_name()] = ""
+						results[player:get_player_name()] = {}
+						end_task("file_system", player)
 						tmusic_player(player)
 					end
-				elseif results[event.row]:match("%.mn") then
-					for k,v in pairs(results) do
+				elseif results[player:get_player_name()][event.row]:match("%.mn") then
+					for k,v in pairs(results[player:get_player_name()]) do
 						table.insert(file, v)
 					end
 					if file[event.row] ~= nil then
-						text = minetest.serialize(
+						text[player:get_player_name()] = minetest.serialize(
 						file[event.row]):
 						gsub("return ", ""):gsub("{", ""):
 						gsub("}", ""):gsub("\"", ""):
 						gsub(".+%.mn %- ", "")
-						if not minetest.serialize(tasks.name):
+						if not minetest.serialize(tasks.name[player:get_player_name()]):
 						match("notepad") then
-							register_task("notepad")
-							handle_tasks("notepad")
-							current_tasks = current_tasks ..
-							notepad_task
+							register_task("notepad", player)
+							handle_tasks("notepad", player)
+							current_tasks[player:get_player_name()] = current_tasks[player:get_player_name()] ..
+							notepad_task[player:get_player_name()]
 						end
-						active_task = "notepad"
-						notepad_status = "minimized"
-						search_word = ""
-						results = {}
-						end_task("file_system")
-						counter = 0
+						active_task[player:get_player_name()] = "notepad"
+						notepad_status[player:get_player_name()] = "minimized"
+						search_word[player:get_player_name()] = ""
+						results[player:get_player_name()] = {}
+						end_task("file_system", player)
 						notepad(player)
 					end
-				elseif results[event.row]:match("%.png") then
-					for k,v in pairs(results) do
+				elseif results[player:get_player_name()][event.row]:match("%.png") then
+					for k,v in pairs(results[player:get_player_name()]) do
 						table.insert(file, v)
 					end
 					if file[event.row] ~= nil then
-						register_task("pic_viewer")
-						handle_tasks("pic_viewer")
-						current_tasks = current_tasks ..
-						pic_viewer_task
-						active_task = "pic_viewer"
-						pic_viewer_status = "minimized"
-						search_word = ""
-						results = {}
-						end_task("file_system")
-						counter = 0
-						image_to_display = file[event.row]
+						register_task("pic_viewer", player)
+						handle_tasks("pic_viewer", player)
+						current_tasks[player:get_player_name()] = current_tasks[player:get_player_name()] ..
+						pic_viewer_task[player:get_player_name()]
+						active_task[player:get_player_name()] = "pic_viewer"
+						pic_viewer_status[player:get_player_name()] = "minimized"
+						search_word[player:get_player_name()] = ""
+						results[player:get_player_name()] = {}
+						end_task("file_system", player)
+						image_to_display[player:get_player_name()] = file[event.row]
 						pic_viewer(player)
 					end
-				elseif results[event.row]:match("Downloads not") then
+				elseif results[player:get_player_name()][event.row]:match("Downloads not") then
 					return false
 				else
 					application = string.lower(
-					results[event.row])
-					register_task(application)
-					current_tasks = current_tasks ..
-					handle_tasks(application)
-					active_task = application
-					_G[application .. "_status"] = "minimized"
-					search_word = ""
-					results = {}
-					end_task("file_system")
-					counter = 0
+					results[player:get_player_name()][event.row])
+					register_task(application, player)
+					current_tasks[player:get_player_name()] = current_tasks[player:get_player_name()] ..
+					handle_tasks(application, player)
+					active_task[player:get_player_name()] = application
+					_G[application .. "_status"][player:get_player_name()] = "minimized"
+					search_word[player:get_player_name()] = ""
+					results[player:get_player_name()] = {}
+					end_task("file_system", player)
 					if application == "email" then
 						email(player, inbox_items(player))
 					else
@@ -423,14 +429,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		end
 		if event.type == "CHG" then
-			selected = "true"
-			item = event.row
+			selected[player:get_player_name()] = "true"
+			item[player:get_player_name()] = event.row
 		end
 		if fields.delete then
 			if files.Documents[player:get_player_name()] ~= nil then
-				if selected == "true" then
-					if #results > 0 then
-						if results[item]:match("%.mn") then
+				if selected[player:get_player_name()] == "true" then
+					if #results[player:get_player_name()] > 0 then
+						if results[player:get_player_name()][item[player:get_player_name()]]:match("%.mn") then
 							file_system(player,
 							files.Documents[player:
 							get_player_name()],
@@ -451,17 +457,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		if fields.yes then
 			table.remove(files.Documents[player:get_player_name()],
-			item)
+			item[player:get_player_name()])
 			save_files()
-			item = {}
+			item[player:get_player_name()] = {}
 			file_system(player, files.Documents[player:
 			get_player_name()])
-			selected = "false"
+			selected[player:get_player_name()] = "false"
 		end
 		if fields.no then
 			file_system(player, files.Documents[player:
 			get_player_name()])
-			selected = "false"
+			selected[player:get_player_name()] = "false"
 		end
 	end
 end)
